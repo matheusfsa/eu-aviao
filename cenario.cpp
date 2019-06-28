@@ -1,20 +1,50 @@
 #include <GL/freeglut.h>
 #include <math.h>
+#include <iostream>
+#include <string>
+using namespace std;
 float posCameraX,posCameraY,posCameraZ, raio, angulo;
 
 void init (void) 
 {
-/*  select clearing (background) color       */
-    glClearColor (0.0, 0.0, 0.0, 0.0);
-    posCameraX = 0.3;
-    posCameraY = 0.1;
-    posCameraZ = 0.1;
-/*  initialize viewing values  */
+    cout << "Please enter the radius of the planet: ";
+    cin >> raio; //ex: 0.5
+    cout << "Please enter the camera's starting X Y Z: ";
+    cin >> posCameraX >> posCameraY >> posCameraZ; //ex: 2 1 1
+   
+    /*  initialize viewing values  */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-2.0, 2.0, -2.0, 2.0, -1, 100.0);
-    //gluPerspective(120.0, 1, -0.5, 100.0);
-    
+    //gluPerspective(120.0, 1, 0.5, 1000.0);
+    glMatrixMode (GL_MODELVIEW);
+    glLoadIdentity();
+     
+    //GLfloat light1_ambient[] = { 0.5, 0.5, 0.5, 1.0};
+    //GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0};
+
+    //GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+    //GLfloat mat_shininess[] = { 50.0 };    
+    glClearColor (0.0, 0.0, 0.0, 0.0);
+    glShadeModel (GL_SMOOTH);
+
+    //glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    //glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    //glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient);
+    //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+    GLfloat light_position[] = {1.0, 0.0, 0.0, 1.0};
+    GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+
+    GLfloat lmodel_ambient[] = { 0.3, 0.3, 0.3, 1.0 };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+        
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_DEPTH_TEST);
 }
 void specialKeys(int key, int x, int y)
 {
@@ -38,21 +68,21 @@ void specialKeys(int key, int x, int y)
 }
 void display(void)
 {
-   glClear (GL_COLOR_BUFFER_BIT);
+   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.5, 0.0);
+   gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
    glColor3f (0.2, 0.3, 1.0);
-   glutSolidSphere(0.5,20,20);
-
+   glutSolidSphere(raio,20,20);
    glPushMatrix();
-
-   glTranslatef(0.0,  1.0, -1.0);
-    
-   glColor3f (1.0, 1.0, 0.0);
-   glutSolidSphere(0.2,20,20);
-   
+   	glTranslatef(0.0,  1.0, -1.0);   	 
+        glColor3f (1.0, 1.0, 0.0);
+   	glutSolidSphere(0.2,20,20);
+        //GLfloat light_position[] = {0.0, 0.0, 0.0, 1.0};
+	//GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};
+	//glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+	//glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
    glPopMatrix();
    
    glBegin(GL_LINES);
@@ -74,10 +104,11 @@ void display(void)
 
 int main(int argc, char** argv){
     glutInit(&argc, argv);
-    glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+    glutInitDisplayMode (GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize (500, 500); 
     glutInitWindowPosition (500, 100);
     glutCreateWindow (argv[0]);
+
     init();
     glutDisplayFunc(display); 
     glutSpecialFunc(specialKeys);
