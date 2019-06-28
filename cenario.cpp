@@ -20,18 +20,9 @@ void init (void)
     glMatrixMode (GL_MODELVIEW);
     glLoadIdentity();
      
-    //GLfloat light1_ambient[] = { 0.5, 0.5, 0.5, 1.0};
-    //GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0};
-
-    //GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-    //GLfloat mat_shininess[] = { 50.0 };    
     glClearColor (0.0, 0.0, 0.0, 0.0);
     glShadeModel (GL_SMOOTH);
 
-    //glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-    //glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-    //glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient);
-    //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
     GLfloat light_position[] = {1.0, 0.0, 0.0, 1.0};
     GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
