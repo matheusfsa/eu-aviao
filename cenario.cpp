@@ -3,17 +3,21 @@
 #include <iostream>
 #include <string>
 using namespace std;
-float posCameraX,posCameraY,posCameraZ, raio, angulo;
+float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo;
 void init(void) 
 {
    cout << "Please enter the radius of the planet: ";
    cin >> raio; //ex: 0.5
-   cout << "Please enter the camera's starting X Y Z: ";
-   cin >> posCameraX >> posCameraY >> posCameraZ; //ex: 2 1 1
+   cout << "Please enter the sun's position: ";
+   cin >> solX >> solY >> solZ; //ex: 0 1 -1
+   posCameraX = 4;
+   posCameraY = 4;
+   posCameraZ = 4;
 
-   GLfloat light_position[] = { 1.0, 0.0, 0.0, 1.0 };
-   GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};    
-   GLfloat lmodel_ambient[] = { 0.3, 0.3, 0.3, 1.0 };
+   //GLfloat light_position[] = { -1.0, -1.0, -1.0, 1.0 };
+   GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};
+   GLfloat mShiny[] = {120.0};    
+   GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
    glClearColor (0.0, 0.0, 0.0, 0.0);
    glShadeModel (GL_SMOOTH);
 
@@ -24,13 +28,15 @@ void init(void)
    
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+   //glLightfv(GL_LIGHT0, GL_POSITION, light_position);
    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+   glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mShiny);
    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 
    glEnable(GL_LIGHTING);
    glEnable(GL_LIGHT0);
    glEnable(GL_DEPTH_TEST);
+   glEnable(GL_COLOR_MATERIAL);
 
 }
 
@@ -58,8 +64,8 @@ void specialKeys(int key, int x, int y)
 void display(void)
 {
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   GLfloat light_position[] = { 0, 1, -1.0, 1.0 };
-
+   GLfloat light_position[] = { solX, solY, solZ, 1.0 };
+   GLfloat light_pos2[] = { 0, 0, 0.0, 1.0 };
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    
@@ -70,15 +76,12 @@ void display(void)
    glutSolidSphere (raio, 20, 16);   
 
    glPushMatrix();
-   	glTranslatef(0.0,  1.0, -1.0);   	 
+   	glTranslatef(solX,  solY, solZ);   	 
         glColor3f (1.0, 1.0, 0.0);
-   	glutSolidSphere(0.2,20,20);
+   	glutSolidSphere(raio*1.5,20,20);
    glPopMatrix();
 
-//glutWireTeapot(0.5);
-   //glutWireSphere(0.5,20,20);
    //visualização dos eixos
-   //exercício: faça um plano sob a chaleira
    glBegin(GL_LINES);
         glColor3f (1.0, 0.0, 0.0);
         glVertex3f(0.0, 0.0, 0.0);
