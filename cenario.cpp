@@ -3,86 +3,95 @@
 #include <iostream>
 #include <string>
 using namespace std;
-float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo;
-void init(void) 
-{
-   cout << "Please enter the radius of the planet: ";
-   cin >> raio; //ex: 0.5
-   cout << "Please enter the sun's position: ";
-   cin >> solX >> solY >> solZ; //ex: 0 1 -1
-   posCameraX = 4;
-   posCameraY = 4;
-   posCameraZ = 4;
-
-   //GLfloat light_position[] = { -1.0, -1.0, -1.0, 1.0 };
-   GLfloat light_diffuse[] = {1.0, 1.0, 0.0, 1.0};
-   GLfloat mShiny[] = {120.0};    
-   GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
-   glClearColor (0.0, 0.0, 0.0, 0.0);
-   glShadeModel (GL_SMOOTH);
-
-   /*  initialize viewing values  */
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-   glOrtho(-2.0, 2.0, -2.0, 2.0, -1, 100.0);
+float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ;
+GLfloat luz_pontual[] = { 0.0, 1.0, 1.0, 1.0 };
+void iluminar(){
+   //LUZ
+   // no mínimo 8 fontes podem ser utilizadas 
+   //(iniciadas com cor preta)
+   // número de fontes de luz afeta performance
+    
+   //LUZ 0
    
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-   //glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-   glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mShiny);
-   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-
-   glEnable(GL_LIGHTING);
+   //define características para a fonte de luz 0	
+   //fonte de luz direcional (por que w==0?)
+   GLfloat light0_position[] = { 0.0, 1.0, 0.0, 0.0 };
+   GLfloat light0_diffuse[] = { 0.1, 0.1, 0.1, 1.0 };
+   //atribui características para a fonte de luz 0
+   //cor padrão: branco
+   glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+   glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
+   
+   //LUZ 1
+   //fonte de luz pontual
+   //define características para a fonte de luz 1
+   GLfloat light1_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
+   GLfloat light1_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+  // GLfloat light1_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+   
+   //atribui as características para a fonte de luz 1
+   //(experimentem remover alguns dos componentes abaixo)
+   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
+   glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
+   glLightfv(GL_LIGHT1, GL_SPECULAR, light1_specular);
+   //glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient); 
+   
+   //"acende" cada uma das luzes configuradas
    glEnable(GL_LIGHT0);
-   glEnable(GL_DEPTH_TEST);
-   glEnable(GL_COLOR_MATERIAL);
-
+   glEnable(GL_LIGHT1);
 }
-
-void specialKeys(int key, int x, int y)
-{
-   float angulo = 2*M_PI/180;
-   switch (key) {
-       case GLUT_KEY_LEFT : 
-            posCameraX =  posCameraX*cos(-angulo) + posCameraZ*sin(-angulo);
-            posCameraZ = -posCameraX*sin(-angulo) + posCameraZ*cos(-angulo);
-            
-            break;
-       case GLUT_KEY_RIGHT : 
-            posCameraX =  posCameraX*cos(angulo) + posCameraZ*sin(angulo);
-            posCameraZ = -posCameraX*sin(angulo) + posCameraZ*cos(angulo);                      
-            break;     
-      case GLUT_KEY_UP : 
-            posCameraX =  posCameraX*cos(angulo) + posCameraY*sin(angulo);
-            posCameraY = -posCameraX*sin(angulo) + posCameraY*cos(angulo);                      
-            break;       
-   }
-   glutPostRedisplay();
-}
-
-void display(void)
-{
-   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   GLfloat light_position[] = { solX, solY, solZ, 1.0 };
-   GLfloat light_pos2[] = { 0, 0, 0.0, 1.0 };
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
+void desenhar_luz(){
+   glPushAttrib (GL_LIGHTING_BIT);
    
-   gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-   glLightfv(GL_LIGHT0, GL_POSITION, light_position);   
-   
-   glColor3f (0.7, 0.7, 1.0);
-   glutSolidSphere (raio, 20, 16);   
-
+   GLfloat mat_diffuse[] = { 1.0, 1.0, 0.0, 1.0 };
+   GLfloat mat_emission[] = { 1.0, 1.0, 0.0, 1.0 };
+          
+   //atribui características ao material
+   glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+   glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+ 
+   glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_diffuse);
+    
    glPushMatrix();
-   	glTranslatef(solX,  solY, solZ);   	 
-        glColor3f (1.0, 1.0, 0.0);
-   	glutSolidSphere(raio*1.5,20,20);
+   glTranslatef(luz_pontual[0],luz_pontual[1],luz_pontual[2]); 
+   
+   glEnable(GL_LIGHTING);
+   glColor3f (1.0, 1.0, 0.0);
+   glutSolidSphere(0.7,50,50);
+   glDisable(GL_LIGHTING);
+   
+   glPopAttrib();
    glPopMatrix();
+}
 
-   //visualização dos eixos
-   glBegin(GL_LINES);
+void desenhar_objeto(){	
+   //MATERIAL
+   //define características para aparência do material	
+   //exercício: testar exemplos da seção 
+   //Changing Material Properties, do Red Book 
+   GLfloat mat_specular[] = { 0, 1, 1.0, 1.0 };
+   GLfloat mat_diffuse[] = {0.1, 0.8, 1.0, 1.0 };
+   GLfloat mat_shininess[] = { 100.0 };
+          
+   glPushAttrib (GL_LIGHTING_BIT);
+   
+   //atribui características ao material
+   glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+   glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+   glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+   
+  glEnable(GL_LIGHTING);
+   glColor3f (0.1, 0.8, 0.0);
+   glutSolidSphere (raio, 20, 16);   
+   glDisable(GL_LIGHTING);
+   
+   glPopAttrib();
+}
+void desenhar_eixos(){
+   //glEnable(GL_LIGHTING);
+    //não há efeitos de iluminação nos eixos
+	glLineWidth(3);
+    glBegin(GL_LINES);
         glColor3f (1.0, 0.0, 0.0);
         glVertex3f(0.0, 0.0, 0.0);
         glVertex3f(1.0, 0.0, 0.0);
@@ -94,10 +103,93 @@ void display(void)
         glColor3f (0.0, 0.0, 1.0);
         glVertex3f(0.0, 0.0, 0.0);
         glVertex3f(0.0, 0.0, 1.0);    
-    glEnd();
+    glEnd(); //glDisable(GL_LIGHTING);
+	}  
+void init(void) 
+{
+   //cout << "Please enter the radius of the planet: ";
+   //cin >> raio; //ex: 0.5
+   //cout << "Please enter the sun's position: ";
+   //cin >> solX >> solY >> solZ; //ex: 0 1 -1
+   raio = 0.5;
+   solX = 0;
+   solY = 1;
+   solZ = 1;
+   spinX = 1.0;
+   spinY = 1.0;
+   spinZ = 1.0;
+   posCameraX = 0.3;
+   posCameraY = 0.1;
+   posCameraZ = 0;
+
+  
+   glClearColor (0.0, 0.0, 0.0, 0.0);
+   iluminar();
+   glEnable(GL_DEPTH_TEST);
+   glShadeModel (GL_SMOOTH);
+
+   
+
+}
+
+float atualiza_spin(float spin, float inc){
+   spin = spin + inc;
+   if (spin > 360.0)
+      spin = spin - 360.0;
+}
+void specialKeys(int key, int x, int y)
+{
+   float angulo = 2*M_PI/180;
+   switch (key) {
+       case GLUT_KEY_LEFT : 
+            //spinX = atualiza_spin(spinX, 2.0);
+            //spinZ = atualiza_spin(spinZ, 2.0);
+            posCameraX =  posCameraX*cos(-angulo) + posCameraZ*sin(-angulo);
+            posCameraZ = -posCameraX*sin(-angulo) + posCameraZ*cos(-angulo);
+            
+            break;
+       case GLUT_KEY_RIGHT : 
+            //spinX = atualiza_spin(spinX, -2.0);
+            //spinZ = atualiza_spin(spinZ, -2.0);
+            posCameraX =  posCameraX*cos(angulo) + posCameraZ*sin(angulo);
+            posCameraZ = -posCameraX*sin(angulo) + posCameraZ*cos(angulo);                   
+            break;     
+      case GLUT_KEY_UP : 
+            //spinX = atualiza_spin(spinX, -2.0);
+            //spinY = atualiza_spin(spinY, -2.0);
+            posCameraX =  posCameraX*cos(angulo) + posCameraY*sin(angulo);
+            posCameraY = -posCameraX*sin(angulo) + posCameraY*cos(angulo);                      
+            break;     
+      case GLUT_KEY_DOWN : 
+            spinX = atualiza_spin(spinX, 2.0);
+            spinY = atualiza_spin(spinY, 2.0);
+            //posCameraX =  posCameraX*cos(-angulo) + posCameraY*sin(-angulo);
+            //posCameraY = -posCameraX*sin(-angulo) + posCameraY*cos(-angulo);                      
+            break;     
+   }
+   printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
+   //printf("Pos X: %f, Pos Y: %f, Pos Z: %f",  posCameraX, posCameraY, posCameraZ);
+   glutPostRedisplay();
+}
+
+void display(void)
+{
+   //limpeza do zbuffer deve ser feita a cada desenho da tela
+   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ 
+   glMatrixMode(GL_MODELVIEW);
+   glLoadIdentity();
+   glRotatef(spinX, spinY, spinZ, 0.0);
+   
+   gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+   glPopMatrix();
+   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
+ 
+   desenhar_luz(); 
+   desenhar_eixos();
+   desenhar_objeto();
     
-   //troca de buffers, o flush é implícito aqui
-   glutSwapBuffers();   
+   glutSwapBuffers();
 
 }
 
