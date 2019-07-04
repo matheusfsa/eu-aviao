@@ -4,7 +4,7 @@
 #include <string>
 using namespace std;
 float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ;
-GLfloat luz_pontual[] = { 0.0, 1.0, 1.0, 1.0 };
+GLfloat luz_pontual[] = { 0.0, 1.0, 10.0, 1.0 };
 void iluminar(){
    //LUZ
    // no mínimo 8 fontes podem ser utilizadas 
@@ -69,7 +69,7 @@ void desenhar_objeto(){
    //define características para aparência do material	
    //exercício: testar exemplos da seção 
    //Changing Material Properties, do Red Book 
-   GLfloat mat_specular[] = { 0, 1, 1.0, 1.0 };
+   GLfloat mat_specular[] = {  0, 1, 1.0, 1.0 };
    GLfloat mat_diffuse[] = {0.1, 0.8, 1.0, 1.0 };
    GLfloat mat_shininess[] = { 100.0 };
           
@@ -80,7 +80,7 @@ void desenhar_objeto(){
    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
    
-  glEnable(GL_LIGHTING);
+   glEnable(GL_LIGHTING);
    glColor3f (0.1, 0.8, 0.0);
    glutSolidSphere (raio, 20, 16);   
    glDisable(GL_LIGHTING);
@@ -113,8 +113,8 @@ void init(void)
    //cin >> solX >> solY >> solZ; //ex: 0 1 -1
    raio = 0.5;
    solX = 0;
-   solY = 1;
-   solZ = 1;
+   solY = 10;
+   solZ = 10;
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
@@ -142,16 +142,16 @@ void specialKeys(int key, int x, int y)
 {
    switch (key) {
        case GLUT_KEY_LEFT : 
-            atualiza_spin(&spinY, -2.0);
+            atualiza_spin(&spinY, 2.0);
             break;
        case GLUT_KEY_RIGHT : 
-            atualiza_spin(&spinY, 2.0);                  
+            atualiza_spin(&spinY, -2.0);                  
             break;     
       case GLUT_KEY_UP : 
-            atualiza_spin(&spinX, -2.0);                  
+            atualiza_spin(&spinX, 2.0);                  
             break;     
       case GLUT_KEY_DOWN : 
-            atualiza_spin(&spinX, 2.0);               
+            atualiza_spin(&spinX, -2.0);               
             break;     
    }
    printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
@@ -168,12 +168,17 @@ void display(void)
    
    
    //gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+   
    gluLookAt (0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
-   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    glRotatef(spinX, 1, 0, 0);
    glRotatef(spinY, 0, 1, 0);
    glRotatef(spinZ, 0, 0, 1);
+   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
+   
    desenhar_luz(); 
+   //glPopMatrix();
+   //glPopMatrix();
+   //glPopMatrix();
    desenhar_eixos();
    desenhar_objeto();
     
@@ -186,12 +191,17 @@ void reshape (int w, int h)
    glViewport (0, 0, (GLsizei) w, (GLsizei) h);
    glMatrixMode (GL_PROJECTION);
    glLoadIdentity();
+   //ortográfica
+   /**
    if (w <= h)
       glOrtho (-1.5, 1.5, -1.5*(GLfloat)h/(GLfloat)w,
          1.5*(GLfloat)h/(GLfloat)w, -10.0, 10.0);
    else
       glOrtho (-1.5*(GLfloat)w/(GLfloat)h,
          1.5*(GLfloat)w/(GLfloat)h, -1.5, 1.5, -10.0, 10.0);
+   */
+   //perspectiva
+   gluPerspective(90.0, w/h, 0.3, 1000.0);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
 }
