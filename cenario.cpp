@@ -132,43 +132,29 @@ void init(void)
 
 }
 
-float atualiza_spin(float spin, float inc){
-   spin = spin + inc;
-   if (spin > 360.0)
-      spin = spin - 360.0;
+void atualiza_spin(float* spin, float inc){
+   *spin += inc;
+   if (*spin > 360.0)
+      *spin = *spin - 360.0;
+   
 }
 void specialKeys(int key, int x, int y)
 {
-   float angulo = 2*M_PI/180;
    switch (key) {
        case GLUT_KEY_LEFT : 
-            //spinX = atualiza_spin(spinX, 2.0);
-            //spinZ = atualiza_spin(spinZ, 2.0);
-            posCameraX =  posCameraX*cos(-angulo) + posCameraZ*sin(-angulo);
-            posCameraZ = -posCameraX*sin(-angulo) + posCameraZ*cos(-angulo);
-            
+            atualiza_spin(&spinY, -2.0);
             break;
        case GLUT_KEY_RIGHT : 
-            //spinX = atualiza_spin(spinX, -2.0);
-            //spinZ = atualiza_spin(spinZ, -2.0);
-            posCameraX =  posCameraX*cos(angulo) + posCameraZ*sin(angulo);
-            posCameraZ = -posCameraX*sin(angulo) + posCameraZ*cos(angulo);                   
+            atualiza_spin(&spinY, 2.0);                  
             break;     
       case GLUT_KEY_UP : 
-            //spinX = atualiza_spin(spinX, -2.0);
-            //spinY = atualiza_spin(spinY, -2.0);
-            posCameraX =  posCameraX*cos(angulo) + posCameraY*sin(angulo);
-            posCameraY = -posCameraX*sin(angulo) + posCameraY*cos(angulo);                      
+            atualiza_spin(&spinX, -2.0);                  
             break;     
       case GLUT_KEY_DOWN : 
-            spinX = atualiza_spin(spinX, 2.0);
-            spinY = atualiza_spin(spinY, 2.0);
-            //posCameraX =  posCameraX*cos(-angulo) + posCameraY*sin(-angulo);
-            //posCameraY = -posCameraX*sin(-angulo) + posCameraY*cos(-angulo);                      
+            atualiza_spin(&spinX, 2.0);               
             break;     
    }
    printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
-   //printf("Pos X: %f, Pos Y: %f, Pos Z: %f",  posCameraX, posCameraY, posCameraZ);
    glutPostRedisplay();
 }
 
@@ -179,12 +165,14 @@ void display(void)
  
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   glRotatef(spinX, spinY, spinZ, 0.0);
    
-   gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-   glPopMatrix();
+   
+   //gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+   gluLookAt (0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
- 
+   glRotatef(spinX, 1, 0, 0);
+   glRotatef(spinY, 0, 1, 0);
+   glRotatef(spinZ, 0, 0, 1);
    desenhar_luz(); 
    desenhar_eixos();
    desenhar_objeto();
