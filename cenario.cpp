@@ -4,7 +4,7 @@
 #include <string>
 using namespace std;
 float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ;
-GLfloat luz_pontual[] = { 0.0, 1.0, 10.0, 1.0 };
+GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 void iluminar(){
    //LUZ
    // no mínimo 8 fontes podem ser utilizadas 
@@ -16,28 +16,28 @@ void iluminar(){
    //define características para a fonte de luz 0	
    //fonte de luz direcional (por que w==0?)
    GLfloat light0_position[] = { 0.0, 1.0, 0.0, 0.0 };
-   GLfloat light0_diffuse[] = { 0.1, 0.1, 0.1, 1.0 };
+   GLfloat light0_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
    //atribui características para a fonte de luz 0
    //cor padrão: branco
-   glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
-   glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
-   
+   //glLightfv(GL_LIGHT2, GL_POSITION, light0_position);
+   //glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
+   glLightfv(GL_LIGHT2, GL_AMBIENT, light0_diffuse); 
    //LUZ 1
    //fonte de luz pontual
    //define características para a fonte de luz 1
    GLfloat light1_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
    GLfloat light1_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  // GLfloat light1_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+   GLfloat light1_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
    
    //atribui as características para a fonte de luz 1
    //(experimentem remover alguns dos componentes abaixo)
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
    glLightfv(GL_LIGHT1, GL_SPECULAR, light1_specular);
-   //glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient); 
+   glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient); 
    
    //"acende" cada uma das luzes configuradas
-   glEnable(GL_LIGHT0);
+   glEnable(GL_LIGHT2);
    glEnable(GL_LIGHT1);
 }
 void desenhar_luz(){
@@ -82,7 +82,7 @@ void desenhar_objeto(){
    
    glEnable(GL_LIGHTING);
    glColor3f (0.1, 0.8, 0.0);
-   glutSolidSphere (raio, 20, 16);   
+   glutSolidSphere (raio, 420, 16);   
    glDisable(GL_LIGHTING);
    
    glPopAttrib();
@@ -107,11 +107,15 @@ void desenhar_eixos(){
 	}  
 void init(void) 
 {
-   //cout << "Please enter the radius of the planet: ";
-   //cin >> raio; //ex: 0.5
-   //cout << "Please enter the sun's position: ";
-   //cin >> solX >> solY >> solZ; //ex: 0 1 -1
-   raio = 0.5;
+   cout << "Please enter the radius of the planet(ex: 0.5): ";
+   cin >> raio; //ex: 0.5
+   cout << "Please enter the sun's position(ex: 25 0 -25): ";
+   cin >> solX >> solY >> solZ; //ex: 0 1 50
+   //raio = 0.5;
+    luz_pontual[0] = solX;
+    luz_pontual[1] = solY;
+    luz_pontual[2] = solZ;
+    luz_pontual[3] = 1.0;
    solX = 0;
    solY = 10;
    solZ = 10;
@@ -154,7 +158,7 @@ void specialKeys(int key, int x, int y)
             atualiza_spin(&spinX, -2.0);               
             break;     
    }
-   printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
+   ///printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
    glutPostRedisplay();
 }
 
