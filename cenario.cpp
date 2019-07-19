@@ -3,8 +3,11 @@
 #include <iostream>
 #include <string>
 using namespace std;
-float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ;
+float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
+
+
+
 void iluminar(){
    //LUZ
    // no mínimo 8 fontes podem ser utilizadas 
@@ -90,28 +93,32 @@ void desenhar_objeto(){
 void desenhar_eixos(){
    //glEnable(GL_LIGHTING);
     //não há efeitos de iluminação nos eixos
+   float size = 5.0;
 	glLineWidth(3);
     glBegin(GL_LINES);
         glColor3f (1.0, 0.0, 0.0);
         glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(1.0, 0.0, 0.0);
+        glVertex3f(size, 0.0, 0.0);
         
         glColor3f (0.0, 1.0, 0.0);
         glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, 1.0, 0.0);
+        glVertex3f(0.0, size, 0.0);
       
         glColor3f (0.0, 0.0, 1.0);
         glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, 0.0, 1.0);    
+        glVertex3f(0.0, 0.0, size);    
     glEnd(); //glDisable(GL_LIGHTING);
 	}  
 void init(void) 
 {
-   cout << "Please enter the radius of the planet(ex: 0.5): ";
-   cin >> raio; //ex: 0.5
-   cout << "Please enter the sun's position(ex: 25 0 -25): ";
-   cin >> solX >> solY >> solZ; //ex: 0 1 50
-   //raio = 0.5;
+   //cout << "Please enter the radius of the planet(ex: 0.5): ";
+   //cin >> raio; //ex: 0.5
+   //cout << "Please enter the sun's position(ex: 25 0 -25): ";
+   //cin >> solX >> solY >> solZ; //ex: 0 1 50
+   raio = 3.0;
+   solX = 0;
+   solY = 6.5;
+   solZ = -5;
     luz_pontual[0] = solX;
     luz_pontual[1] = solY;
     luz_pontual[2] = solZ;
@@ -125,8 +132,11 @@ void init(void)
    posCameraX = 0.3;
    posCameraY = 0.1;
    posCameraZ = 0;
-
-  
+   h = 1.0;
+   h_max = 2.0;
+   h_min = 1.0;
+   dh = 0.0;
+   v = 0.0;
    glClearColor (0.0, 0.0, 0.0, 0.0);
    iluminar();
    glEnable(GL_DEPTH_TEST);
@@ -142,25 +152,45 @@ void atualiza_spin(float* spin, float inc){
       *spin = *spin - 360.0;
    
 }
-void specialKeys(int key, int x, int y)
-{
-   switch (key) {
-       case GLUT_KEY_LEFT : 
-            atualiza_spin(&spinY, 2.0);
-            break;
-       case GLUT_KEY_RIGHT : 
-            atualiza_spin(&spinY, -2.0);                  
-            break;     
-      case GLUT_KEY_UP : 
-            atualiza_spin(&spinX, 2.0);                  
-            break;     
-      case GLUT_KEY_DOWN : 
-            atualiza_spin(&spinX, -2.0);               
-            break;     
+void spinDisplay(void)
+{  
+   if( h == h_max){
+      atualiza_spin(&spinX, v);
    }
-   ///printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
    glutPostRedisplay();
 }
+void specialKeys(int key, int x, int y)
+{
+   if(h  == h_max){
+      switch (key) {
+         case GLUT_KEY_LEFT : 
+               atualiza_spin(&spinZ, 2.0);
+               break;
+         case GLUT_KEY_RIGHT : 
+               atualiza_spin(&spinZ, -2.0);                  
+               break;     
+         case GLUT_KEY_UP : 
+               v += 0.01;
+               if(v == 5)
+                  v = 5;
+               //atualiza_spin(&spinX, 2.0);                  
+               break;     
+         case GLUT_KEY_DOWN : 
+               //atualiza_spin(&spinX, -2.0);               
+               //v -= 0.01;
+               if( v > 0)
+                  v -= 0.01;
+               else
+                  v = 0;
+               cout << v << endl;
+               break;     
+         
+      }
+      ///printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
+      glutPostRedisplay();
+   }
+}
+
 
 void display(void)
 {
@@ -173,7 +203,13 @@ void display(void)
    
    //gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
    
-   gluLookAt (0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
+   
+   //glTranslatef(0.0, 0.0,0.0);
+   //glPushMatrix();
+      //glTranslatef(0.0, 0.2,0.0);
+      gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
+   //glPopMatrix();
+
    glRotatef(spinX, 1, 0, 0);
    glRotatef(spinY, 0, 1, 0);
    glRotatef(spinZ, 0, 0, 1);
@@ -188,6 +224,59 @@ void display(void)
     
    glutSwapBuffers();
 
+}
+void update_h(int time){
+   if(dh != 0){
+      h += dh;
+      if(h > h_max)
+         h = h_max;
+      if(h < h_min)
+         h = h_min;
+      
+      glutPostRedisplay();
+   }
+}
+void decolar(float inc){
+      for (int i = 0; h < h_max ; i++)
+      {
+         h += inc;
+         display();
+      }
+      h = h_max;
+}
+void aterrisar(float inc){
+      
+      for (int i = 0; h > h_min ; i++)
+      {
+         h -= inc;
+         display();
+      }
+      h = h_min;
+      v = 0.0;
+}
+void keyboard(unsigned char key, int x, int y){
+   if(dh == 0){
+      switch (key)
+      {
+      case 'd':
+         //dh = 0.1;
+         if(h == 1.0){
+            decolar(0.001);
+            glutIdleFunc(spinDisplay);
+         }
+        break;
+      case 's':
+         if(h == h_max){
+            aterrisar(0.001);
+            glutIdleFunc(NULL);
+         }
+         break;
+      default:
+         break;
+      }
+       //glutPostRedisplay();
+   }
+  
 }
 
 void reshape (int w, int h)
@@ -219,8 +308,10 @@ int main(int argc, char** argv)
    glutCreateWindow (argv[0]);
    init ();
    glutDisplayFunc(display); 
+   glutKeyboardFunc(keyboard);
    glutSpecialFunc(specialKeys);
    glutReshapeFunc(reshape);
+   //glutIdleFunc(muda_altura);
    glutMainLoop();
    return 0;
 }
