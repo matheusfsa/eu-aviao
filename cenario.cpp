@@ -119,10 +119,10 @@ void init(void)
    solX = 0;
    solY = 6.5;
    solZ = -5;
-    luz_pontual[0] = solX;
-    luz_pontual[1] = solY;
-    luz_pontual[2] = solZ;
-    luz_pontual[3] = 1.0;
+   luz_pontual[0] = solX;
+   luz_pontual[1] = solY;
+   luz_pontual[2] = solZ;
+   luz_pontual[3] = 1.0;
    solX = 0;
    solY = 10;
    solZ = 10;
@@ -160,7 +160,8 @@ void spinDisplay(void)
    glutPostRedisplay();
 }
 void specialKeys(int key, int x, int y)
-{
+{  
+  
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT : 
@@ -172,21 +173,18 @@ void specialKeys(int key, int x, int y)
          case GLUT_KEY_UP : 
                v += 0.01;
                if(v == 5)
-                  v = 5;
-               //atualiza_spin(&spinX, 2.0);                  
+                  v = 5;               
                break;     
          case GLUT_KEY_DOWN : 
-               //atualiza_spin(&spinX, -2.0);               
-               //v -= 0.01;
-               if( v > 0)
+               if( v > 0.01)
                   v -= 0.01;
                else
                   v = 0;
+
                cout << v << endl;
                break;     
          
       }
-      ///printf("SpinX: %.2f SpinY: %.2f SpinZ: %.2f\n", spinX, spinY, spinZ); 
       glutPostRedisplay();
    }
 }
@@ -228,53 +226,38 @@ void display(void)
 void update_h(int time){
    if(dh != 0){
       h += dh;
-      if(h > h_max)
+      if(h > h_max){
          h = h_max;
-      if(h < h_min)
+         dh = 0;
+      }
+      if(h < h_min){
          h = h_min;
-      
-      glutPostRedisplay();
+         dh = 0;
+      }
    }
+   glutPostRedisplay();
+   glutTimerFunc(10, update_h,1);
 }
-void decolar(float inc){
-      for (int i = 0; h < h_max ; i++)
-      {
-         h += inc;
-         display();
-      }
-      h = h_max;
-}
-void aterrisar(float inc){
-      
-      for (int i = 0; h > h_min ; i++)
-      {
-         h -= inc;
-         display();
-      }
-      h = h_min;
-      v = 0.0;
-}
+
 void keyboard(unsigned char key, int x, int y){
    if(dh == 0){
       switch (key)
       {
       case 'd':
-         //dh = 0.1;
-         if(h == 1.0){
-            decolar(0.001);
+         if(h == h_min){
+            dh = 0.01;
             glutIdleFunc(spinDisplay);
          }
         break;
       case 's':
          if(h == h_max){
-            aterrisar(0.001);
+            dh = -0.01;
             glutIdleFunc(NULL);
          }
          break;
       default:
          break;
       }
-       //glutPostRedisplay();
    }
   
 }
@@ -311,7 +294,7 @@ int main(int argc, char** argv)
    glutKeyboardFunc(keyboard);
    glutSpecialFunc(specialKeys);
    glutReshapeFunc(reshape);
-   //glutIdleFunc(muda_altura);
+   glutTimerFunc(10, update_h,1);
    glutMainLoop();
    return 0;
 }
