@@ -1,12 +1,82 @@
+// para rodar: g++ -o cenario Sphere.cpp Bmp.cpp cenario.cpp -lGL -lGLU -lglut
 #include <GL/freeglut.h>
 #include <math.h>
 #include <iostream>
 #include <string>
+#include "Sphere.h"
+#include "Bmp.h"
+
+#include <vector>
 using namespace std;
-float posCameraX,posCameraY,posCameraZ, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+
+Sphere planeta, sol;
+GLuint texPlanetaId, texSolId;
+GLuint texture[2];
+float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+void  draw_tex_sphere(Sphere sphere, GLuint tex);
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
+GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
+{
+    Image::Bmp bmp;
+    if(!bmp.read(fileName))
+        return 0;     // exit if failed load image
 
+    // get bmp info
+    int width = bmp.getWidth();
+    int height = bmp.getHeight();
+    const unsigned char* data = bmp.getDataRGB();
+    GLenum type = GL_UNSIGNED_BYTE;    // only allow BMP with 8-bit per channel
+
+    // We assume the image is 8-bit, 24-bit or 32-bit BMP
+    GLenum format;
+    int bpp = bmp.getBitCount();
+    if(bpp == 8)
+        format = GL_LUMINANCE;
+    else if(bpp == 24)
+        format = GL_RGB;
+    else if(bpp == 32)
+        format = GL_RGBA;
+    else
+        return 0;               // NOT supported, exit
+
+   
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // select modulate to mix texture with color for shading
+    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+    // if wrap is true, the texture wraps over at the edges (repeat)
+    //       ... false, the texture ends at the edges (clamp)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap ? GL_REPEAT : GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap ? GL_REPEAT : GL_CLAMP);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // copy texture data
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, data);
+    //glGenerateMipmap(GL_TEXTURE_2D);
+
+    // build our texture mipmaps
+    switch(bpp)
+    {
+    case 8:
+        gluBuild2DMipmaps(GL_TEXTURE_2D, 1, width, height, GL_LUMINANCE, type, data);
+        break;
+    case 24:
+        gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, type, data);
+        break;
+    case 32:
+        gluBuild2DMipmaps(GL_TEXTURE_2D, 4, width, height, GL_RGBA, type, data);
+        break;
+    }
+
+    return texture;
+}
 
 void iluminar(){
    //LUZ
@@ -60,20 +130,42 @@ void desenhar_luz(){
    
    glEnable(GL_LIGHTING);
    glColor3f (1.0, 1.0, 0.0);
-   glutSolidSphere(0.7,50,50);
+   glActiveTexture(GL_TEXTURE1);
+   glutSolidSphere(sol_raio,50,50);
+   draw_tex_sphere(sol, texture[1]);
    glDisable(GL_LIGHTING);
    
    glPopAttrib();
    glPopMatrix();
 }
+void  draw_tex_sphere(Sphere sphere, GLuint tex){
+   glEnable(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D, tex);
 
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_NORMAL_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+   glVertexPointer(3, GL_FLOAT, 0, sphere.vertices.data());
+   glNormalPointer(GL_FLOAT, 0, sphere.normals.data());
+   glTexCoordPointer(2, GL_FLOAT, 0, sphere.texCoords.data());
+
+   glPushMatrix();
+      glColor3f (1, 1, 1);
+      glRotatef(-90, 1, 0, 0);
+      glDrawElements(GL_TRIANGLES, (unsigned int)sphere.indices.size(), GL_UNSIGNED_INT,  sphere.indices.data());
+   glPopMatrix();
+   glDisable(GL_TEXTURE_2D); 
+   
+   //glDisable(GL_TEXTURE_2D);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_NORMAL_ARRAY);
+   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+}
 void desenhar_objeto(){	
-   //MATERIAL
-   //define características para aparência do material	
-   //exercício: testar exemplos da seção 
-   //Changing Material Properties, do Red Book 
-   GLfloat mat_specular[] = {  0, 1, 1.0, 1.0 };
-   GLfloat mat_diffuse[] = {0.1, 0.8, 1.0, 1.0 };
+   GLfloat mat_specular[] = {  1, 1, 1.0, 1.0 };
+   GLfloat mat_diffuse[] = {1.0, 1.0, 1.0, 1.0 };
    GLfloat mat_shininess[] = { 100.0 };
           
    glPushAttrib (GL_LIGHTING_BIT);
@@ -84,16 +176,17 @@ void desenhar_objeto(){
    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
    
    glEnable(GL_LIGHTING);
-   glColor3f (0.1, 0.8, 0.0);
-   glutSolidSphere (raio, 420, 16);   
+   glActiveTexture(GL_TEXTURE0);
+   draw_tex_sphere(planeta, texture[0]);
    glDisable(GL_LIGHTING);
    
    glPopAttrib();
+   
 }
 void desenhar_eixos(){
    //glEnable(GL_LIGHTING);
     //não há efeitos de iluminação nos eixos
-   float size = 5.0;
+   float size = raio + 2;
 	glLineWidth(3);
     glBegin(GL_LINES);
         glColor3f (1.0, 0.0, 0.0);
@@ -115,17 +208,18 @@ void init(void)
    //cin >> raio; //ex: 0.5
    //cout << "Please enter the sun's position(ex: 25 0 -25): ";
    //cin >> solX >> solY >> solZ; //ex: 0 1 50
-   raio = 3.0;
+   raio = 5.0;
+   sol_raio = 50;
    solX = 0;
-   solY = 6.5;
-   solZ = -5;
+   solY = 1;
+   solZ = -225;
+   planeta = init(planeta, raio, 60, 60);
+   sol = init(sol, sol_raio, 60,60);
    luz_pontual[0] = solX;
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
    luz_pontual[3] = 1.0;
-   solX = 0;
-   solY = 10;
-   solZ = 10;
+   
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
@@ -141,7 +235,14 @@ void init(void)
    iluminar();
    glEnable(GL_DEPTH_TEST);
    glShadeModel (GL_SMOOTH);
-
+   planeta = buildVerticesSphere(planeta);
+   sol = buildVerticesSphere(sol);
+   
+   glGenTextures(2, texture);
+   glActiveTexture(GL_TEXTURE0);
+   texture[0] = loadTexture("textures/ds.bmp", true, texture[0]);
+   glActiveTexture(GL_TEXTURE1);
+   texture[1] = loadTexture("textures/sol.bmp", true,texture[1]);
    
 
 }
@@ -194,7 +295,7 @@ void display(void)
 {
    //limpeza do zbuffer deve ser feita a cada desenho da tela
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
+    
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    
@@ -219,9 +320,8 @@ void display(void)
    //glPopMatrix();
    desenhar_eixos();
    desenhar_objeto();
-    
    glutSwapBuffers();
-
+   
 }
 void update_h(int time){
    if(dh != 0){
