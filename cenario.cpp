@@ -18,38 +18,8 @@ float laser_size;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
-void  add_laser(){
-   
-   lasers.push_back(0.0);
-   lasers.push_back(0.0);
-   lasers.push_back(0.0);
 
-   lasers.push_back(0.0);
-   lasers.push_back(0.0);
-   lasers.push_back(-4);
 
-   lasers_color.push_back(1.0);
-   lasers_color.push_back(0.0);
-   lasers_color.push_back(0.0);
-   
-   
-}
-void draw_laser(){
-   cout << lasers.size()/3 << endl;
-   glEnableClientState(GL_VERTEX_ARRAY);
-   glEnableClientState(GL_COLOR_ARRAY);
-   glVertexPointer(3, GL_FLOAT, 0, lasers.data());
-   glColorPointer(3, GL_FLOAT, 0, lasers_color.data());
-   glDrawArrays(GL_LINES, 0, lasers.size());
-   glDisableClientState(GL_COLOR_ARRAY);
-   glDisableClientState(GL_VERTEX_ARRAY);
-
-}
-void update_lasers(){
-   for(int i = 2; i < laser_size; i+=3){
-      lasers[i] +=  0.5;
-   }
-}
 GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
 {
     Image::Bmp bmp;
@@ -239,17 +209,19 @@ void desenhar_eixos(){
 	}  
 void init(void) 
 {
-   //cout << "Please enter the radius of the planet(ex: 0.5): ";
-   //cin >> raio; //ex: 0.5
-   //cout << "Please enter the sun's position(ex: 25 0 -25): ";
-   //cin >> solX >> solY >> solZ; //ex: 0 1 50
-   raio = 5.0;
+   cout << "Please enter the radius of the planet(ex: 5.0): ";
+   cin >> raio; //ex: 5,0
+   cout << "Please enter the sun's position(ex: 0 1 -225): ";
+   cin >> solX >> solY >> solZ; //ex: 0 1 -225
    sol_raio = 50;
+   /**
+   raio = 5.0;
    solX = 0;
    solY = 1;
    solZ = -225;
+   **/
    planeta = init(planeta, raio, 60, 60);
-   sol = init(sol, sol_raio, 60,60);
+   sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
@@ -290,7 +262,6 @@ void atualiza_spin(float* spin, float inc){
 }
 void spinDisplay(void)
 {  
-   update_lasers();
    if( h == h_max){
       atualiza_spin(&spinX, v);
    }
@@ -334,14 +305,7 @@ void display(void)
    glLoadIdentity();
    
    
-   //gluLookAt (posCameraX, posCameraY, posCameraZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-   
-   
-   //glTranslatef(0.0, 0.0,0.0);
-   //glPushMatrix();
-      //glTranslatef(0.0, 0.2,0.0);
-      gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
-   //glPopMatrix();
+   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
 
    glRotatef(spinX, 1, 0, 0);
    glRotatef(spinY, 0, 1, 0);
@@ -349,11 +313,8 @@ void display(void)
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    
    desenhar_luz(); 
-   //glPopMatrix();
-   //glPopMatrix();
-   //glPopMatrix();
-   draw_laser();
-   desenhar_eixos();
+   
+   //desenhar_eixos();
    desenhar_objeto();
    glutSwapBuffers();
    
@@ -390,11 +351,7 @@ void keyboard(unsigned char key, int x, int y){
             glutIdleFunc(NULL);
          }
          break;
-      case 'a':
-         if(h == h_max){
-            add_laser();
-         }
-        break;
+      
       default:
          break;
       }
