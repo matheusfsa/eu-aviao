@@ -6,7 +6,7 @@ Para executar o programa:
 Comandos:
 
 	Decolar: 'd'
-	Aterrisar: 's'
+	Aterrissar: 's'
 
 	Os comandos abaixo só podem ser utilizados após o avião ter decolado
 
