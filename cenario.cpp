@@ -1,4 +1,4 @@
-// para rodar: g++ -o cenario Sphere.cpp Bmp.cpp cenario.cpp -lGL -lGLU -lglut
+// para compilar: g++ -o cenario Sphere.cpp Bmp.cpp cenario.cpp -lGL -lGLU -lglut
 #include <GL/freeglut.h>
 #include <math.h>
 #include <iostream>
@@ -8,14 +8,48 @@
 
 #include <vector>
 using namespace std;
-
+vector<float> lasers;
+vector<float> lasers_color;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
 float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+float laser_size;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
+void  add_laser(){
+   
+   lasers.push_back(0.0);
+   lasers.push_back(0.0);
+   lasers.push_back(0.0);
+
+   lasers.push_back(0.0);
+   lasers.push_back(0.0);
+   lasers.push_back(-4);
+
+   lasers_color.push_back(1.0);
+   lasers_color.push_back(0.0);
+   lasers_color.push_back(0.0);
+   
+   
+}
+void draw_laser(){
+   cout << lasers.size()/3 << endl;
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_COLOR_ARRAY);
+   glVertexPointer(3, GL_FLOAT, 0, lasers.data());
+   glColorPointer(3, GL_FLOAT, 0, lasers_color.data());
+   glDrawArrays(GL_LINES, 0, lasers.size());
+   glDisableClientState(GL_COLOR_ARRAY);
+   glDisableClientState(GL_VERTEX_ARRAY);
+
+}
+void update_lasers(){
+   for(int i = 2; i < laser_size; i+=3){
+      lasers[i] +=  0.5;
+   }
+}
 GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
 {
     Image::Bmp bmp;
@@ -183,6 +217,7 @@ void desenhar_objeto(){
    glPopAttrib();
    
 }
+
 void desenhar_eixos(){
    //glEnable(GL_LIGHTING);
     //não há efeitos de iluminação nos eixos
@@ -255,6 +290,7 @@ void atualiza_spin(float* spin, float inc){
 }
 void spinDisplay(void)
 {  
+   update_lasers();
    if( h == h_max){
       atualiza_spin(&spinX, v);
    }
@@ -281,8 +317,6 @@ void specialKeys(int key, int x, int y)
                   v -= 0.01;
                else
                   v = 0;
-
-               cout << v << endl;
                break;     
          
       }
@@ -318,6 +352,7 @@ void display(void)
    //glPopMatrix();
    //glPopMatrix();
    //glPopMatrix();
+   draw_laser();
    desenhar_eixos();
    desenhar_objeto();
    glutSwapBuffers();
@@ -355,6 +390,11 @@ void keyboard(unsigned char key, int x, int y){
             glutIdleFunc(NULL);
          }
          break;
+      case 'a':
+         if(h == h_max){
+            add_laser();
+         }
+        break;
       default:
          break;
       }
@@ -378,8 +418,7 @@ void reshape (int w, int h)
    */
    //perspectiva
    gluPerspective(90.0, w/h, 0.3, 1000.0);
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
+   glutPostRedisplay();
 }
 
 int main(int argc, char** argv)
