@@ -13,7 +13,8 @@ vector<float> lasers_color;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float upCameraX,upCameraY,upCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+float refCameraX, refCameraY, refCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+
 float laser_size;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
@@ -221,9 +222,9 @@ void init(void)
    solX = 0;
    solY = 1;
    solZ = -225;
-   upCameraX = 0.0;
-   upCameraY = 1.0;
-   upCameraZ = 0.0;
+   refCameraX = 0.0;
+   refCameraY = 0.0;
+   refCameraZ = -5.0;
    planeta = init(planeta, raio, 60, 60);
    sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
@@ -274,14 +275,14 @@ void specialKeys(int key, int x, int y)
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT : 
-               //atualiza_spin(&spinZ, 2.0);
-               upCameraX =  upCameraX*cos(-angulo) + upCameraY*sin(-angulo);
-               upCameraY = -upCameraX*sin(-angulo) + upCameraY*cos(-angulo);
+               //atualiza_spin(&spinY, 2.0);
+               refCameraX =  refCameraX*cos(-angulo) + refCameraZ*sin(-angulo);
+               refCameraZ = -refCameraX*sin(-angulo) + refCameraZ*cos(-angulo);
                break;
          case GLUT_KEY_RIGHT : 
-               //atualiza_spin(&spinZ, -2.0);    
-               upCameraX =  upCameraX*cos(angulo) + upCameraY*sin(angulo);
-               upCameraY = -upCameraX*sin(angulo) + upCameraY*cos(angulo);              
+               //atualiza_spin(&spinY, -2.0);    
+               refCameraX =  refCameraX*cos(angulo) + refCameraZ*sin(angulo);
+               refCameraZ = -refCameraX*sin(angulo) + refCameraZ*cos(angulo);              
                break;     
          case GLUT_KEY_UP : 
                v += 0.01;
@@ -309,10 +310,9 @@ void display(void)
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    
-   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, upCameraX, upCameraY, upCameraZ);	
+   gluLookAt (0.0, raio + h, 1.0,  refCameraX, refCameraY,refCameraZ, 0.0, 1.0, 0.0);	
    //glRotatef(spinZ, 0, 0, 1);
-   glRotatef(spinX, 1, 0, 0);
-   glRotatef(spinY, 0, 1, 0);
+   glRotatef(spinX, -refCameraZ, 0.0, refCameraX);
    
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    
