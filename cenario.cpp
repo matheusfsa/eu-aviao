@@ -13,10 +13,10 @@ vector<float> lasers_color;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float refCameraX, refCameraY, refCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
-
+float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
 float laser_size;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
+
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
 
@@ -215,16 +215,14 @@ void init(void)
    cin >> raio; //ex: 5,0
    cout << "Please enter the sun's position(ex: 0 1 -225): ";
    cin >> solX >> solY >> solZ; //ex: 0 1 -225
-   **/
-   sol_raio = 50;
    
+   **/ 
+   sol_raio = 50;
    raio = 5.0;
    solX = 0;
    solY = 1;
    solZ = -225;
-   refCameraX = 0.0;
-   refCameraY = 0.0;
-   refCameraZ = -5.0;
+  
    planeta = init(planeta, raio, 60, 60);
    sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
@@ -235,6 +233,9 @@ void init(void)
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
+   posCameraX = 0.3;
+   posCameraY = 0.1;
+   posCameraZ = 0;
    h = 1.0;
    h_max = 2.0;
    h_min = 1.0;
@@ -260,7 +261,6 @@ void atualiza_spin(float* spin, float inc){
    *spin += inc;
    if (*spin > 360.0)
       *spin = *spin - 360.0;
-   
 }
 void spinDisplay(void)
 {  
@@ -271,18 +271,14 @@ void spinDisplay(void)
 }
 void specialKeys(int key, int x, int y)
 {  
-   float angulo = 2*M_PI/180;
+  
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT : 
-               //atualiza_spin(&spinY, 2.0);
-               refCameraX =  refCameraX*cos(-angulo) + refCameraZ*sin(-angulo);
-               refCameraZ = -refCameraX*sin(-angulo) + refCameraZ*cos(-angulo);
+               atualiza_spin(&spinZ, 2.0);
                break;
          case GLUT_KEY_RIGHT : 
-               //atualiza_spin(&spinY, -2.0);    
-               refCameraX =  refCameraX*cos(angulo) + refCameraZ*sin(angulo);
-               refCameraZ = -refCameraX*sin(angulo) + refCameraZ*cos(angulo);              
+               atualiza_spin(&spinZ, -2.0);                  
                break;     
          case GLUT_KEY_UP : 
                v += 0.01;
@@ -310,10 +306,12 @@ void display(void)
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    
-   gluLookAt (0.0, raio + h, 1.0,  refCameraX, refCameraY,refCameraZ, 0.0, 1.0, 0.0);	
-   //glRotatef(spinZ, 0, 0, 1);
-   glRotatef(spinX, -refCameraZ, 0.0, refCameraX);
    
+   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
+
+   glRotatef(spinX, 1, 0, 0);
+   glRotatef(spinY, 0, 1, 0);
+   glRotatef(spinZ, 0, 0, 1);
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    
    desenhar_luz(); 
