@@ -1,21 +1,25 @@
-// para compilar: g++ -o cenario Sphere.cpp Bmp.cpp cenario.cpp -lGL -lGLU -lglut
+// para compilar: g++ -o cenario Sphere.cpp Bmp.cpp cenario.cpp -I ./CImg -lm -lpthread -lX11 -lGL -lGLU -lglut
 #include <GL/freeglut.h>
 #include <math.h>
 #include <iostream>
 #include <string>
 #include "Sphere.h"
 #include "Bmp.h"
-
 #include <vector>
+#include "CImg.h"
+using namespace cimg_library;
 using namespace std;
+
 vector<float> lasers;
 vector<float> lasers_color;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float upCameraX,upCameraY,upCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
 float laser_size;
+
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
+
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
 
@@ -209,22 +213,20 @@ void desenhar_eixos(){
 	}  
 void init(void) 
 {
-   /**
+     /**
    cout << "Please enter the radius of the planet(ex: 5.0): ";
    cin >> raio; //ex: 5,0
    cout << "Please enter the sun's position(ex: 0 1 -225): ";
    cin >> solX >> solY >> solZ; //ex: 0 1 -225
    **/
+  
    sol_raio = 50;
-   
    raio = 5.0;
    solX = 0;
    solY = 1;
    solZ = -225;
-   upCameraX = 0.0;
-   upCameraY = 1.0;
-   upCameraZ = 0.0;
-   planeta = init(planeta, raio, 60, 60);
+   
+   planeta = init(planeta, raio, 120, 120);
    sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
    luz_pontual[1] = solY;
@@ -234,6 +236,9 @@ void init(void)
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
+   posCameraX = 0.3;
+   posCameraY = 0.1;
+   posCameraZ = 0;
    h = 1.0;
    h_max = 2.0;
    h_min = 1.0;
@@ -243,8 +248,9 @@ void init(void)
    iluminar();
    glEnable(GL_DEPTH_TEST);
    glShadeModel (GL_SMOOTH);
-   planeta = buildVerticesSphere(planeta);
-   sol = buildVerticesSphere(sol);
+   CImg<unsigned char> height_map("heightmap/ds.jpg");
+   planeta = buildVerticesSphere(planeta, true, height_map);
+   sol = buildVerticesSphere(sol, false, height_map);
    
    glGenTextures(2, texture);
    glActiveTexture(GL_TEXTURE0);
@@ -270,18 +276,14 @@ void spinDisplay(void)
 }
 void specialKeys(int key, int x, int y)
 {  
-   float angulo = 2*M_PI/180;
+  
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT : 
-               //atualiza_spin(&spinZ, 2.0);
-               upCameraX =  upCameraX*cos(-angulo) + upCameraY*sin(-angulo);
-               upCameraY = -upCameraX*sin(-angulo) + upCameraY*cos(-angulo);
+               atualiza_spin(&spinZ, 2.0);
                break;
          case GLUT_KEY_RIGHT : 
-               //atualiza_spin(&spinZ, -2.0);    
-               upCameraX =  upCameraX*cos(angulo) + upCameraY*sin(angulo);
-               upCameraY = -upCameraX*sin(angulo) + upCameraY*cos(angulo);              
+               atualiza_spin(&spinZ, -2.0);                  
                break;     
          case GLUT_KEY_UP : 
                v += 0.01;
@@ -299,30 +301,6 @@ void specialKeys(int key, int x, int y)
       glutPostRedisplay();
    }
 }
-
-
-void display(void)
-{
-   //limpeza do zbuffer deve ser feita a cada desenho da tela
-   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-   
-   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, upCameraX, upCameraY, upCameraZ);	
-   //glRotatef(spinZ, 0, 0, 1);
-   glRotatef(spinX, 1, 0, 0);
-   glRotatef(spinY, 0, 1, 0);
-   
-   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
-   
-   desenhar_luz(); 
-   
-   //desenhar_eixos();
-   desenhar_objeto();
-   glutSwapBuffers();
-   
-}
 void update_h(int time){
    if(dh != 0){
       h += dh;
@@ -337,6 +315,30 @@ void update_h(int time){
    }
    glutPostRedisplay();
    glutTimerFunc(10, update_h,1);
+}
+
+void display(void)
+{
+   //limpeza do zbuffer deve ser feita a cada desenho da tela
+   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+   glMatrixMode(GL_MODELVIEW);
+   glLoadIdentity();
+   
+   
+   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
+
+   glRotatef(spinX, 1, 0, 0);
+   glRotatef(spinY, 0, 1, 0);
+   glRotatef(spinZ, 0, 0, 1);
+   glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
+   
+   desenhar_luz(); 
+   
+   //desenhar_eixos();
+   desenhar_objeto();
+   glutSwapBuffers();
+   
 }
 
 void keyboard(unsigned char key, int x, int y){
@@ -389,6 +391,7 @@ int main(int argc, char** argv)
    glutInitWindowSize (500, 500); 
    glutInitWindowPosition (500, 100);
    glutCreateWindow (argv[0]);
+   
    init ();
    glutDisplayFunc(display); 
    glutKeyboardFunc(keyboard);
