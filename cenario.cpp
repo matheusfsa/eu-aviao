@@ -8,18 +8,35 @@
 
 #include <vector>
 using namespace std;
+typedef struct Rotacao
+{
+  float angle;
+  float x;
+  float y;
+  float z;
+  
+} Rotacao;
+
 vector<float> lasers;
 vector<float> lasers_color;
+vector<Rotacao> rotacoes;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
 float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
-float laser_size;
+float laser_size, refX, refY, refZ;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 
-
+Rotacao create_rotate(float angle, float x, float y, float z){
+   Rotacao rot;
+   rot.angle = angle;
+   rot.x = x;
+   rot.y = y;
+   rot.z = z;
+   return rot;
+}
 
 GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
 {
@@ -229,13 +246,15 @@ void init(void)
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
    luz_pontual[3] = 1.0;
-   
+   refX = 0.0;
+   refY = 0.0;
+   refZ = -5.0;
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
-   posCameraX = 0.3;
-   posCameraY = 0.1;
-   posCameraZ = 0;
+   posCameraX = 0.0;
+   posCameraY = raio + h;
+   posCameraZ = 1.0;
    h = 1.0;
    h_max = 2.0;
    h_min = 1.0;
@@ -256,7 +275,9 @@ void init(void)
    
 
 }
-
+void print_rotacao(Rotacao rotacao){
+   cout << "(" << rotacao.angle << ", " << rotacao.x << ", " << rotacao.y << ", " << rotacao.z << ")" << endl;
+}
 void atualiza_spin(float* spin, float inc){
    *spin += inc;
    if (*spin > 360.0)
@@ -265,20 +286,21 @@ void atualiza_spin(float* spin, float inc){
 void spinDisplay(void)
 {  
    if( h == h_max){
-      atualiza_spin(&spinX, v);
+      rotacoes.push_back(create_rotate(v, 1.0, 0.0, 0.0));
    }
    glutPostRedisplay();
 }
 void specialKeys(int key, int x, int y)
 {  
-  
+   float temp;
+   float angulo =2;
    if(h  == h_max){
       switch (key) {
-         case GLUT_KEY_LEFT : 
-               atualiza_spin(&spinZ, 2.0);
+         case GLUT_KEY_LEFT :
+               rotacoes.push_back(create_rotate(-angulo, 0, 1, 0));
                break;
          case GLUT_KEY_RIGHT : 
-               atualiza_spin(&spinZ, -2.0);                  
+               rotacoes.push_back(create_rotate(angulo, 0, 1, 0));
                break;     
          case GLUT_KEY_UP : 
                v += 0.01;
@@ -305,19 +327,19 @@ void display(void)
     
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
+  
    
-   
-   gluLookAt (0.0, raio + h, 1.0, 0.0, 0.0, -5.0, 0.0, 1.0, 0.0);	
-
-   glRotatef(spinX, 1, 0, 0);
-   glRotatef(spinY, 0, 1, 0);
-   glRotatef(spinZ, 0, 0, 1);
+   gluLookAt (posCameraX, posCameraY, posCameraZ, refX, refY, refZ, 0.0, 1.0, 0.0);	
+   for(int i =  rotacoes.size()-1; i >= 0; i--){
+      glRotatef(rotacoes[i].angle, rotacoes[i].x, rotacoes[i].y, rotacoes[i].z);
+      }
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    
    desenhar_luz(); 
    
    //desenhar_eixos();
    desenhar_objeto();
+   
    glutSwapBuffers();
    
 }
@@ -333,6 +355,7 @@ void update_h(int time){
          dh = 0;
       }
    }
+   posCameraY = raio+h;
    glutPostRedisplay();
    glutTimerFunc(10, update_h,1);
 }
