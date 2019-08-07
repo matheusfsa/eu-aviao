@@ -16,6 +16,13 @@ typedef struct Rotacao
   float z;
   
 } Rotacao;
+typedef struct Point
+{
+  float x;
+  float y;
+  float z;
+  
+} Point;
 
 vector<float> lasers;
 vector<float> lasers_color;
@@ -23,7 +30,7 @@ vector<Rotacao> rotacoes;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY,solZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
+float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY, solZ, upX, upY, upZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
 float laser_size, refX, refY, refZ;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 
@@ -227,19 +234,18 @@ void desenhar_eixos(){
 	}  
 void init(void) 
 {
-   /**
+  /** 
    cout << "Please enter the radius of the planet(ex: 5.0): ";
    cin >> raio; //ex: 5,0
    cout << "Please enter the sun's position(ex: 0 1 -225): ";
    cin >> solX >> solY >> solZ; //ex: 0 1 -225
-   
-   **/ 
-   sol_raio = 50;
+  **/
    raio = 5.0;
    solX = 0;
    solY = 1;
    solZ = -225;
-  
+    
+   sol_raio = 50;
    planeta = init(planeta, raio, 60, 60);
    sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
@@ -252,6 +258,9 @@ void init(void)
    spinX = 1.0;
    spinY = 1.0;
    spinZ = 1.0;
+   upX = 0.0;
+   upY =1.0;
+   upZ =0.0;
    posCameraX = 0.0;
    posCameraY = raio + h;
    posCameraZ = 1.0;
@@ -275,6 +284,26 @@ void init(void)
    
 
 }
+void rotate_arbitrary(float *x,float *y,float *z,float a,float b,float c,float d, float e, float f,float angle){
+   float u = a - d;
+   float v = b - e;
+   float w = c - f;
+   float L = u*u + v*v + w*w;
+   float x_v = *x;
+   float y_v = *y;
+   float z_v = *z;
+   *x = ((a*(v*v + w*w) - u*(b*v + c*w - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*x_v*cos(angle)+ sqrt(L)*(-c*v + b*w - w*y_v + v*z_v)*sin(angle))/L;
+   *y = ((b*(u*u + w*w) - u*(a*u + c*w - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*y_v*cos(angle)+ sqrt(L)*(-c*u + a*w - w*x_v + v*z_v)*sin(angle))/L;
+   *z = ((c*(u*u + v*v) - w*(a*u + b*v - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*z_v*cos(angle)+ sqrt(L)*(-b*u + a*v - v*x_v + u*y_v)*sin(angle))/L;
+}
+void rotate(float *a, float *b, float angulo){
+   float temp;
+   temp = *a;
+   *a =  temp*cos(angulo) + *b*sin(angulo);
+   *b = -temp*sin(angulo) + *b*cos(angulo);
+          
+   
+}
 void print_rotacao(Rotacao rotacao){
    cout << "(" << rotacao.angle << ", " << rotacao.x << ", " << rotacao.y << ", " << rotacao.z << ")" << endl;
 }
@@ -286,6 +315,7 @@ void atualiza_spin(float* spin, float inc){
 void spinDisplay(void)
 {  
    if( h == h_max){
+      //rotate_arbitrary(&refX,&refY, &refZ, ox, oy, oz, -refZ, refY, refX, v);
       rotacoes.push_back(create_rotate(v, 1.0, 0.0, 0.0));
    }
    glutPostRedisplay();
@@ -294,9 +324,12 @@ void specialKeys(int key, int x, int y)
 {  
    float temp;
    float angulo =2;
+   //angulo = 2*M_PI/180;
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT :
+               //rotate(&refX, &refZ, -angulo);
+               //rotate_arbitrary(&refX,&refY, &refZ, 0.0, 0.0, 0.0, upX, upY, upZ, angulo);
                rotacoes.push_back(create_rotate(-angulo, 0, 1, 0));
                break;
          case GLUT_KEY_RIGHT : 
@@ -329,7 +362,7 @@ void display(void)
    glLoadIdentity();
   
    
-   gluLookAt (posCameraX, posCameraY, posCameraZ, refX, refY, refZ, 0.0, 1.0, 0.0);	
+   gluLookAt (posCameraX, posCameraY, posCameraZ, refX, refY, refZ, upX, upY, upZ);	
    for(int i =  rotacoes.size()-1; i >= 0; i--){
       glRotatef(rotacoes[i].angle, rotacoes[i].x, rotacoes[i].y, rotacoes[i].z);
       }
