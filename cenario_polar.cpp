@@ -16,13 +16,13 @@ typedef struct Rotacao
   float z;
   
 } Rotacao;
-typedef struct Point
+typedef struct Vetor
 {
   float x;
   float y;
   float z;
   
-} Point;
+} Vetor;
 
 vector<float> lasers;
 vector<float> lasers_color;
@@ -30,12 +30,61 @@ vector<Rotacao> rotacoes;
 Sphere planeta, sol;
 GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float posCameraX,posCameraY,posCameraZ,sol_raio, solX,solY, solZ, upX, upY, upZ, raio, angulo, spinX,spinY,spinZ, h,dh, h_max, h_min, v;
-float laser_size, refX, refY, refZ;
+float sol_raio, solX,solY, solZ, raio, angulo, h,dh, h_max, h_min, v;
+Vetor camera_xyz, up_xyz, ref_xyz;
+Vetor camera_polar, up_polar, ref_polar;
+Vetor direction;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
-
+void print_vetor(Vetor a){
+    cout << "Vetor:(" << a.x << "," << a.y << ", " << a.z << ")" << endl;
+}
+Vetor new_vetor(float x, float y, float z){
+    Vetor res;
+    res.x = x;
+    res.y = y;
+    res.z = z;
+    return res;
+}
+float get_norm(Vetor vetor){
+    return sqrt((vetor.x*vetor.x) + (vetor.y*vetor.y) + (vetor.z*vetor.z));
+}
+Vetor sub_vec(Vetor a, Vetor b){
+    return new_vetor(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+Vetor sum_vec(Vetor a, Vetor b){
+    return new_vetor(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+Vetor inc_vec(Vetor a, Vetor direction, float taxa){
+    return new_vetor(a.x + (direction.x)*taxa, a.y + (direction.y)*taxa, a.z + (direction.z)*taxa);
+}
+Vetor direction_vec(Vetor a, Vetor b){
+    Vetor sub = sub_vec(b, a);
+    float norm = get_norm(sub);
+    return new_vetor(sub.x/norm, sub.y/norm, sub.z/norm);
+}
+Vetor rotate_vec(Vetor v, float angle, char axis){
+    Vetor res = new_vetor(v.x, v.y, v.z);
+    switch (axis)
+    {
+    case 'z':
+        res.x = v.x * cos(angle) + v.y * sin(angle);
+        res.y = -v.x * sin(angle) + v.y * cos(angle);
+        break;
+    case 'x':
+        res.y = v.y * cos(angle) - v.z * cos(angle);
+        res.z = v.y * sin(angle) + v.z * cos(angle);
+        break;
+    case 'y':
+        res.x = v.x * cos(angle) + v.z * sin(angle);
+        res.z = -v.x * sin(angle) + v.z * cos(angle);
+        break;
+    default:
+        break;
+    }
+    return res;
+}
 Rotacao create_rotate(float angle, float x, float y, float z){
    Rotacao rot;
    rot.angle = angle;
@@ -44,7 +93,72 @@ Rotacao create_rotate(float angle, float x, float y, float z){
    rot.z = z;
    return rot;
 }
+Vetor polar_to_xyz(Sphere planeta, float h, Vetor polar){
+    const float PI = 3.1415926f;
+    float sectorStep = 2 * PI / planeta.sectors; 
+    float stackStep = PI / planeta.stacks;
+    float stackAngle = PI / 2 - polar.x * stackStep; //starting from pi/2 to -pi/2
+    float sectorAngle = polar.y * sectorStep; // starting from 0 to 2pi
+    float xy; 
+    Vetor res;
+    xy = (planeta.radius + h) * cosf(stackAngle);
+    res.x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+    res.y = (planeta.radius + h) * sinf(stackAngle);             // r * cos(u) * sin(v)
+    res.z = -xy * sinf(sectorAngle); 
+    if(res.x < 0.00001 && res.x > -0.00001)
+       res.x = 0;
+    if(res.z < 0.00001 && res.z > -0.00001)
+       res.z = 0;
+   if(res.y < 0.00001 && res.y > -0.00001)
+       res.y = 0;
+    return res;
+}
+Vetor rotacionar_lados(Vetor camera_polar, Vetor ref_polar, float angle){
+    Vetor diff  = sub_vec(ref_polar, camera_polar);
+    cout << endl;
+    cout << "ref_polar:";
+    print_vetor(ref_polar);
+    cout << "camera_polar:";
+    print_vetor(camera_polar);
+    cout << "diff:";
+    print_vetor(diff);
+    
+    diff = rotate_vec(diff, angle, 'z');
+     cout << "diff_rot:";
+    print_vetor(diff);
+    Vetor res = sum_vec(camera_polar, diff);
+    cout << "res:";
+    print_vetor(res);
+    if(res.x > 60 )
+        res.x = 60 - res.x;
+    if(res.y > 60)
+        res.y = 60 - res.x;
+    res.x = abs(res.x);
+    res.y = abs(res.y);
+    
+    return res;
+}
 
+Vetor xyz_to_vec(Sphere planeta, float h,Vetor v){
+
+    const float PI = 3.1415926f;
+    float sectorStep = 2 * PI / planeta.sectors; 
+    float stackStep = PI / planeta.stacks;
+    float stackAngle = asin(v.y/(planeta.radius + h));
+    float xy; 
+    xy =(planeta.radius + h) * cosf(stackAngle);
+   
+    float xxy = v.x/xy;
+    float sectorAngle;
+    cout << xxy << endl;
+    if(xxy > 0.99999){
+        cout << xxy << endl;
+        sectorAngle = 0;
+    }else{
+        sectorAngle = acos(xxy);
+    }
+    return new_vetor((PI/2 - stackAngle)/stackStep, sectorAngle/sectorStep, 0.0);
+}
 GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
 {
     Image::Bmp bmp;
@@ -214,55 +328,23 @@ void desenhar_objeto(){
 }
 
 void desenhar_eixos(){
-   //glEnable(GL_LIGHTING);
-    //não há efeitos de iluminação nos eixos
    float size = raio + 2;
 	glLineWidth(3);
-    glBegin(GL_LINES);
+    glBegin(GL_POINTS);
         glColor3f (1.0, 0.0, 0.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(size, 0.0, 0.0);
+        //glVertex3f(0.0, 0.0, 0.0);
+        glVertex3f(camera_xyz.x, camera_xyz.y, camera_xyz.z);
         
         glColor3f (0.0, 1.0, 0.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, size, 0.0);
+        //glVertex3f(posCameraX, posCameraY, posCameraZ);
+        glVertex3f(up_xyz.x, up_xyz.y, up_xyz.z);
       
         glColor3f (0.0, 0.0, 1.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, 0.0, size);    
-    glEnd(); //glDisable(GL_LIGHTING);
+        //glVertex3f(0.0, 0.0, 0.0);
+        glVertex3f(ref_xyz.x, ref_xyz.y, ref_xyz.z);
+    glEnd();
 	}  
-void rotate(Rotacao rotacao){
-   float angulo = rotacao.angle;
-   if(rotacao.y == 1){
-         float temp = posCameraX; 
-         posCameraX =  temp*cos(angulo) + posCameraZ*sin(angulo);
-         posCameraZ = -temp*sin(angulo) + posCameraZ*cos(angulo);
-
-         temp = refX; 
-         refX =  temp*cos(angulo) + refZ*sin(angulo);
-         refZ = -temp*sin(angulo) + refZ*cos(angulo);
-
-         temp = upX; 
-         upX =  temp*cos(angulo) + upZ*sin(angulo);
-         upZ = -temp*sin(angulo) + upZ*cos(angulo);
-   }
-   if(rotacao.x == 1){
-         float temp = posCameraY; 
-         posCameraY =  temp*cos(angulo) + posCameraZ*sin(angulo);
-         posCameraZ = -temp*sin(angulo) + posCameraZ*cos(angulo);
-
-         temp = refY; 
-         refY =  temp*cos(angulo) + refZ*sin(angulo);
-         refZ = -temp*sin(angulo) + refZ*cos(angulo);
-
-         temp = upY; 
-         upY =  temp*cos(angulo) + upZ*sin(angulo);
-         upZ = -temp*sin(angulo) + upZ*cos(angulo);
-   }
-}
-void init(void) 
-{
+void init(void) {
   /** 
    cout << "Please enter the radius of the planet(ex: 5.0): ";
    cin >> raio; //ex: 5,0
@@ -273,7 +355,6 @@ void init(void)
    solX = 0;
    solY = 1;
    solZ = -225;
-    
    sol_raio = 50;
    planeta = init(planeta, raio, 60, 60);
    sol = init(sol, sol_raio, 60, 60);
@@ -281,18 +362,6 @@ void init(void)
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
    luz_pontual[3] = 1.0;
-   refX = 0.0;
-   refY = 0.0;
-   refZ = -5.0;
-   spinX = 1.0;
-   spinY = 1.0;
-   spinZ = 1.0;
-   upX = 0.0;
-   upY =1.0;
-   upZ =0.0;
-   posCameraX = 0.0;
-   posCameraY = raio + h;
-   posCameraZ = 1.0;
    h = 1.0;
    h_max = 2.0;
    h_min = 1.0;
@@ -304,7 +373,12 @@ void init(void)
    glShadeModel (GL_SMOOTH);
    planeta = buildVerticesSphere(planeta);
    sol = buildVerticesSphere(sol);
-   
+   camera_xyz = new_vetor(0.0, planeta.radius + h, 1.0);
+   camera_polar = new_vetor(0.0, planeta.sectors/4, 0);
+   ref_xyz = new_vetor(0.0, 0.0, -5.0);
+   ref_polar = new_vetor(3, planeta.sectors/4, 0);
+   up_xyz = new_vetor(0.0, planeta.radius + h, 1.0); 
+   up_polar = new_vetor(0.0, planeta.sectors/4, 0.0); 
    glGenTextures(2, texture);
    glActiveTexture(GL_TEXTURE0);
    texture[0] = loadTexture("textures/ds.bmp", true, texture[0]);
@@ -312,42 +386,6 @@ void init(void)
    texture[1] = loadTexture("textures/sol.bmp", true,texture[1]);
    
 
-}
-void init_camera(){
-   refX = 0.0;
-   refY = 0.0;
-   refZ = -5.0;
-   upX = 0.0;
-   upY =1.0;
-   upZ =0.0;
-   posCameraX = 0.0;
-   posCameraY = raio + h;
-   posCameraZ = 1.0;
-}
-void rotate_arbitrary(float *x,float *y,float *z,float a,float b,float c,float d, float e, float f,float angle){
-   float u = a - d;
-   float v = b - e;
-   float w = c - f;
-   float L = u*u + v*v + w*w;
-   float x_v = *x;
-   float y_v = *y;
-   float z_v = *z;
-   *x = ((a*(v*v + w*w) - u*(b*v + c*w - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*x_v*cos(angle)+ sqrt(L)*(-c*v + b*w - w*y_v + v*z_v)*sin(angle))/L;
-   *y = ((b*(u*u + w*w) - u*(a*u + c*w - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*y_v*cos(angle)+ sqrt(L)*(-c*u + a*w - w*x_v + v*z_v)*sin(angle))/L;
-   *z = ((c*(u*u + v*v) - w*(a*u + b*v - u*x_v- v*y_v - w*z_v))*(1-cos(angle)) + L*z_v*cos(angle)+ sqrt(L)*(-b*u + a*v - v*x_v + u*y_v)*sin(angle))/L;
-}
-/*
-void rotate(float *a, float *b, float angulo){
-   float temp;
-   temp = *a;
-   *a =  temp*cos(angulo) + *b*sin(angulo);
-   *b = -temp*sin(angulo) + *b*cos(angulo);
-          
-   
-}
-*/
-void print_rotacao(Rotacao rotacao){
-   cout << "(" << rotacao.angle << ", " << rotacao.x << ", " << rotacao.y << ", " << rotacao.z << ")" << endl;
 }
 void atualiza_spin(float* spin, float inc){
    *spin += inc;
@@ -357,28 +395,35 @@ void atualiza_spin(float* spin, float inc){
 void spinDisplay(void)
 {  
    if( h == h_max){
-      //rotate_arbitrary(&refX,&refY, &refZ, ox, oy, oz, -refZ, refY, refX, v);
-      //rotate(create_rotate(v, 1, 0, 0));
-      rotacoes.push_back(create_rotate(v, 1.0, 0.0, 0.0));
+       Vetor direction = direction_vec(camera_polar, ref_polar);
+       
+       camera_polar = inc_vec(camera_polar, direction, v);
+       camera_xyz = polar_to_xyz(planeta, h, camera_polar);
+       ref_polar = inc_vec(ref_polar, direction, v);
+       ref_xyz = polar_to_xyz(planeta, h, ref_polar);
+       up_polar = inc_vec(up_polar, direction, v);
+       up_xyz = polar_to_xyz(planeta, 2*h, up_polar);
    }
    glutPostRedisplay();
 }
 void specialKeys(int key, int x, int y)
 {  
    float temp;
-   float angulo =0.08;
-   //angulo = 2*M_PI/180;
+   float angulo;
+   angulo = M_PI/2;
    if(h  == h_max){
       switch (key) {
          case GLUT_KEY_LEFT :
-               //rotate(&refX, &refZ, -angulo);
-               //rotate_arbitrary(&refX,&refY, &refZ, 0.0, 0.0, 0.0, upX, upY, upZ, angulo);
-               //rotate(create_rotate(-angulo, 0, 1, 0));
-               rotacoes.push_back(create_rotate(-angulo, 0, 1, 0));
+               //print_vetor(ref_polar); 
+               //ref_polar = rotacionar_lados(camera_polar, ref_polar, angulo);
+               //print_vetor(ref_polar);
+               //ref_xyz = polar_to_xyz(planeta, h, ref_polar);
+               print_vetor(ref_xyz);
+               ref_xyz = rotate_vec(ref_xyz, -angulo, 'y');
+               print_vetor(ref_xyz);
+               ref_polar = xyz_to_vec(planeta, h, ref_xyz);
                break;
          case GLUT_KEY_RIGHT : 
-               //rotate(create_rotate(angulo, 0, 1, 0));
-               rotacoes.push_back(create_rotate(angulo, 0, 1, 0));
                break;     
          case GLUT_KEY_UP : 
                v += 0.01;
@@ -405,18 +450,23 @@ void display(void)
     
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   init_camera();
-   for(int i =  rotacoes.size()-1; i >= 0; i--){
-      //glRotatef(rotacoes[i].angle, rotacoes[i].x, rotacoes[i].y, rotacoes[i].z);
-      rotate(rotacoes[i]);
-   }
-   gluLookAt (posCameraX, posCameraY, posCameraZ, refX, refY, refZ, upX, upY, upZ);	
-   
+   camera_xyz = polar_to_xyz(planeta, h, camera_polar);
+   ref_xyz = polar_to_xyz(planeta, h, ref_polar);
+   up_xyz = polar_to_xyz(planeta, 2*h, up_polar);
+   //cout << posCameraX << ", "<< posCameraY << ", "<< posCameraZ <<	endl;
+   //gluLookAt (posCameraX, posCameraY, posCameraZ, refX, refY, refZ, upX, upY, upZ);
+   // Por cima
+   //gluLookAt (0.0, 10.0, 0.0, 0, -5.0, 0.0, 0.0, 0.0, 1.0);	
+   // Por trás
+   //gluLookAt (0.0, 0.0, 10.0, 0, 0, -5.0, 0.0, 1.0, 0.0);	
+   // De lado
+   gluLookAt (10.0, 0.0, 0.0, -5.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    
+
    desenhar_luz(); 
    
-   //desenhar_eixos();
+   desenhar_eixos();
    desenhar_objeto();
    
    glutSwapBuffers();
@@ -434,7 +484,8 @@ void update_h(int time){
          dh = 0;
       }
    }
-   posCameraY = raio+h;
+   //posCameraY = raio+h;
+
    glutPostRedisplay();
    glutTimerFunc(10, update_h,1);
 }
@@ -468,16 +519,6 @@ void reshape (int w, int h)
    glViewport (0, 0, (GLsizei) w, (GLsizei) h);
    glMatrixMode (GL_PROJECTION);
    glLoadIdentity();
-   //ortográfica
-   /**
-   if (w <= h)
-      glOrtho (-1.5, 1.5, -1.5*(GLfloat)h/(GLfloat)w,
-         1.5*(GLfloat)h/(GLfloat)w, -10.0, 10.0);
-   else
-      glOrtho (-1.5*(GLfloat)w/(GLfloat)h,
-         1.5*(GLfloat)w/(GLfloat)h, -1.5, 1.5, -10.0, 10.0);
-   */
-   //perspectiva
    gluPerspective(90.0, w/h, 0.3, 1000.0);
    glutPostRedisplay();
 }
