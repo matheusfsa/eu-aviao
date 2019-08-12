@@ -85,7 +85,7 @@ Vetor rotate_vec(Vetor v, float angle, char axis){
 float getPixel(const unsigned char* data, int width, int height, float s, float t, int channel){
     int j = round(s*width);
     int i = round(t*height);
-    return float(data[3 * (i * width + j)+ channel])/255;
+    return float(data[(i * width + j)+ channel]- 128) /128;
 }
 Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, const char* hmfileNameTxt)
 {
@@ -93,15 +93,19 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
 
     
     int has_hm = 0;
-    int width = 0;
+    int width_img = 0;
+    int height_img = 0;
     float height = 0;
     CImg<unsigned char> height_map;
+    const unsigned char* data;
     vector<float> heights;
     if(hmfileName != NULL){
         has_hm = 1;
-        cout << "Com hm" << endl;
         if(is_img){
             height_map.load(hmfileName);
+            data = height_map.data();
+            height_img = height_map.height();
+            width_img = height_map.width();
         }else{
             heights = load_heights(hmfileNameTxt);
         }
@@ -163,7 +167,7 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
             }
             if(has_hm){
                 if(is_img){
-                        height = getHeight(height_map, j_a, t);
+                        height = getPixel(height_map,width_img, height_img, j_a, t, 0);
                         heights.push_back(height);
                 }else{
                     height = heights[i*stackCount + j_a];    
@@ -171,6 +175,7 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
             }else{
                 height = 0;   
             } 
+            height *= 0.08;
             Vetor v;        
             v.x = nx*height;
             v.y = ny*height;
@@ -237,7 +242,6 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
             }
         }
     }
-    cout<<"esfera construída com sucesso" << endl;
     return sphere;
 }
 Vetor get_height(Sphere sphere, Vetor polar){

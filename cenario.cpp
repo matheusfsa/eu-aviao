@@ -5,9 +5,10 @@
 #include <string>
 #include "Geometry.h"
 #include "Bmp.h"
-
+#include "CImg.h"
 #include <vector>
 using namespace std;
+using namespace cimg_library;
 typedef struct Rotacao
 {
   float angle;
@@ -32,14 +33,15 @@ Rotacao create_rotate(float angle, char axis){
    rot.axis = axis;
    return rot;
 }
-int getPixel( const char* fileName, int i, int j){
+float getPixel( const char* fileName, int i, int j){
     Image::Bmp bmp;
     if(!bmp.read(fileName)){
         return 0;     // exit if failed load image
     }
-    return int(bmp.getData()[i*bmp.getWidth() + j]);
+    return float(bmp.getData()[i*bmp.getWidth() + j] - 128)/128;
 
 }
+
 
 GLuint loadTexture(const char* fileName, bool wrap, GLuint texture)
 {
@@ -331,15 +333,15 @@ void init(void)
    solZ = -225;
     
    sol_raio = 50;
-   planeta = init(planeta, raio, 60, 60);
+   planeta = init(planeta, raio, 120, 120);
    sol = init(sol, sol_raio, 60, 60);
    luz_pontual[0] = solX;
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
    luz_pontual[3] = 1.0;
-   h = 0.6;
-   h_max = 1.0;
-   h_min = 0.6;
+   h = 1.0;
+   h_max = 1.5;
+   h_min = 1.0;
    dh = 0.0;
    v = 0.0;
    init_camera();
@@ -351,12 +353,12 @@ void init(void)
    iluminar();
    glEnable(GL_DEPTH_TEST);
    glShadeModel (GL_SMOOTH);
-   planeta = buildVerticesSphere(planeta,"textures/mars/bump.jpg", 1, "textures/mars/bump.txt");
+   planeta = buildVerticesSphere(planeta,"textures/marsbump.jpg", 1, "textures/bump.txt");
    sol = buildVerticesSphere(sol,NULL, 0, NULL);
     
    glGenTextures(2, texture);
    glActiveTexture(GL_TEXTURE0);
-   texture[0] = loadTexture("textures/mars/texture.bmp", true, texture[0]);
+   texture[0] = loadTexture("textures/mars.bmp", true, texture[0]);
    glActiveTexture(GL_TEXTURE1);
    texture[1] = loadTexture("textures/sol.bmp", true,texture[1]);
   
@@ -418,21 +420,11 @@ void display(void)
     
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   //init_camera();
-   for(int i =  rotacoes.size()-1; i >= 0; i--){
-      //rotate(rotacoes[i]);
-   }
-   //polar = getPolarCoordinates(planeta, camera, h);
-   //print_vetor(polar);
+   polar = getPolarCoordinates(planeta, camera, h);
    dhs = get_height(planeta, polar);
-   //dhs = new_vetor(0.0, 0.0, 0.0);
-   //
-   //print_vetor(dhs);
-   //h_max += dhs.y;
-   //print_vetor(camera);
-   Vetor camera_exib = inc_vec(camera, dhs, 0.4);
-   Vetor ref_exib = inc_vec(ref, dhs, 0.4);
-   gluLookAt (camera.x, camera.y, camera.z, ref.x, ref.y, ref.z, up.x, up.y, up.z);	
+   Vetor camera_exib = inc_vec(camera, dhs, 1.0);
+   Vetor ref_exib = inc_vec(ref, dhs, 1.0);
+   gluLookAt (camera_exib.x, camera_exib.y, camera_exib.z, ref_exib.x, ref_exib.y, ref_exib.z, up.x, up.y, up.z);	
    //gluLookAt (0.0, raio+h, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);	
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    desenhar_luz(); 
