@@ -172,7 +172,6 @@ bool Bmp::read(const char* fileName)
     // open a BMP file as binary mode
     ifstream inFile;
     inFile.open(fileName, ios::binary);  
-    cout << "1" << endl;
            // binary mode
     if(!inFile.good())
     {

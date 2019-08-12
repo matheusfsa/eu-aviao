@@ -421,8 +421,11 @@ void display(void)
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    polar = getPolarCoordinates(planeta, camera, h);
+   
    dhs = get_height(planeta, polar);
    Vetor camera_exib = inc_vec(camera, dhs, 1.0);
+   polar = getPolarCoordinates(planeta, ref, h);
+   dhs = get_height(planeta, polar);
    Vetor ref_exib = inc_vec(ref, dhs, 1.0);
    gluLookAt (camera_exib.x, camera_exib.y, camera_exib.z, ref_exib.x, ref_exib.y, ref_exib.z, up.x, up.y, up.z);	
    //gluLookAt (0.0, raio+h, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);	
@@ -443,8 +446,11 @@ void update_h(int time){
       if(h < h_min){
          h = h_min;
          dh = 0;
+         
       }
    }
+   if(h == h_min)
+      v = 0;
    if(dh != 0){
       camera = inc_vec(camera, eixo_y, dh);
       ref = inc_vec(ref, eixo_y, dh);

@@ -89,9 +89,6 @@ float getPixel(const unsigned char* data, int width, int height, float s, float 
 }
 Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, const char* hmfileNameTxt)
 {
-    
-
-    
     int has_hm = 0;
     int width_img = 0;
     int height_img = 0;
@@ -111,7 +108,6 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
         }
     }else{
         has_hm = 0;
-        cout << "Sem hm" << endl;
     }
     int sectorCount = sphere.sectors;
     int stackCount = sphere.stacks;
@@ -279,26 +275,10 @@ Vetor getPolarCoordinates(Sphere sphere, Vetor vetor, float h){
     if(v < -1){
         v = -1;
     }
-    sectorAngle =acosf(v);
+    sectorAngle = acosf(v);
     if(vetor.z < 0){
         sectorAngle  = 2*PI - sectorAngle;
     }
-    /**
-    if(xy != 0)  
-        v = vetor.x/xy; 
-    else
-        v = 0; 
-    if(v > 1){
-        v = 1; 
-    }
-    if(v < -1){
-        v = -1;
-    }
-    **/
-    //sectorAngle = acosf(vetor.x/xy);
-    //print_vetor(vetor);
-    
-        
     float stack   = (PI / 2 - stackAngle)/sphere.stackStep;
     float sector = sectorAngle / sphere.sectorStep; 
     //cout << "Coordenadas estimadas:" << 
