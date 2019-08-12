@@ -39,6 +39,7 @@ Bmp::Bmp() : width(0), height(0), bitCount(0), dataSize(0), data(0), dataRGB(0),
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // copy constructor
 // We need DEEP COPY for dynamic memory variables because the compiler inserts
@@ -170,7 +171,9 @@ bool Bmp::read(const char* fileName)
 
     // open a BMP file as binary mode
     ifstream inFile;
-    inFile.open(fileName, ios::binary);         // binary mode
+    inFile.open(fileName, ios::binary);  
+    cout << "1" << endl;
+           // binary mode
     if(!inFile.good())
     {
         errorMessage = "Failed to open a BMP file to read.";
@@ -223,6 +226,7 @@ bool Bmp::read(const char* fileName)
     }
 
     // it supports only 8-bit grayscale, 24-bit BGR or 32-bit BGRA
+    
     if(bitCount < 8)
     {
         inFile.close();
@@ -265,7 +269,6 @@ bool Bmp::read(const char* fileName)
     // add extra bytes for paddings if width is not divisible by 4
     data = new unsigned char [dataSizeWithPaddings];
     dataRGB = new unsigned char [dataSize];
-
 /*@@ we don't use palette for 8-bit indexed grayscale mode. Instead, we use the index value as the intensity of the pixel.
     // for loading palette
     unsigned char* palette = 0; // for palette for indexed mode
@@ -289,8 +292,8 @@ bool Bmp::read(const char* fileName)
         inFile.seekg(54, ios::beg);         // palette starts right after BMP header block (54 bytes)
         inFile.read((char*)palette, paletteSize);
     }
-*/
-
+*/  
+    
     if(compression == 0)                    // uncompressed
     {
         inFile.seekg(dataOffset, ios::beg); // move cursor to the starting position of data
@@ -299,18 +302,19 @@ bool Bmp::read(const char* fileName)
     else if(compression == 1)               // 8-bit RLE(Run Length Encode) compressed
     {
         // get length of encoded data
+        
         int size = fileSize - dataOffset;
-
+         
         // allocate tmp array to store the encoded data
         unsigned char *encData = new unsigned char[size];
 
         // read data from file
         inFile.seekg(dataOffset, ios::beg);
         inFile.read((char*)encData, size);
-
+       
         // decode RLE into image data buffer
         decodeRLE8(encData, data);
-
+         
         // deallocate encoded data buffer after decoding
         delete [] encData;
     }
@@ -334,6 +338,7 @@ bool Bmp::read(const char* fileName)
 
     // BMP is bottom-to-top orientation by default, flip image vertically
     // But if the height is negative value, then it is top-to-bottom orientation.
+   
     if(height > 0)
         flipImage(data, width, height, bitCount/8);
 
@@ -342,7 +347,7 @@ bool Bmp::read(const char* fileName)
     memcpy(dataRGB, data, dataSize);    // copy data to dataRGB first
     if(bitCount == 24 || bitCount == 32)
         swapRedBlue(dataRGB, dataSize, bitCount/8);
-
+   
     return true;
 }
 

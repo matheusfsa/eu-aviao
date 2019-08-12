@@ -38,7 +38,7 @@ void  draw_tex_sphere(Sphere sphere, GLuint tex);
 
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
 void print_vetor(Vetor a){
-    cout << "Vetor:(" << a.x << "," << a.y << ", " << a.z << ")" << endl;
+    cout << "(" << a.x << "," << a.y << ", " << a.z << ")" << endl;
 }
 Vetor new_vetor(float x, float y, float z){
     Vetor res;
@@ -68,10 +68,6 @@ Vetor rotate_vec(Vetor v, float angle, char axis){
     Vetor res = new_vetor(v.x, v.y, v.z);
     switch (axis)
     {
-    case 'z':
-        res.x = v.x * cos(angle) + v.y * sin(angle);
-        res.y = -v.x * sin(angle) + v.y * cos(angle);
-        break;
     case 'x':
         res.y = v.y * cos(angle) - v.z * cos(angle);
         res.z = v.y * sin(angle) + v.z * cos(angle);
@@ -79,6 +75,10 @@ Vetor rotate_vec(Vetor v, float angle, char axis){
     case 'y':
         res.x = v.x * cos(angle) + v.z * sin(angle);
         res.z = -v.x * sin(angle) + v.z * cos(angle);
+        break;
+    case 'z':
+        res.x = v.x * cos(angle) + v.y * sin(angle);
+        res.y = -v.x * sin(angle) + v.y * cos(angle);
         break;
     default:
         break;
