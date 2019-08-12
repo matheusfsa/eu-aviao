@@ -32,14 +32,12 @@ Rotacao create_rotate(float angle, char axis){
    rot.axis = axis;
    return rot;
 }
-int loadHeights(Sphere sphere, const char* fileName){
+int getPixel( const char* fileName, int i, int j){
     Image::Bmp bmp;
-    vector<Vetor> res;
     if(!bmp.read(fileName)){
         return 0;     // exit if failed load image
     }
-    
-
+    return int(bmp.getData()[i*bmp.getWidth() + j]);
 
 }
 
@@ -353,7 +351,7 @@ void init(void)
    iluminar();
    glEnable(GL_DEPTH_TEST);
    glShadeModel (GL_SMOOTH);
-   planeta = buildVerticesSphere(planeta,"textures/mars/bump.jpg", 0, "textures/mars/bump.txt");
+   planeta = buildVerticesSphere(planeta,"textures/mars/bump.jpg", 1, "textures/mars/bump.txt");
    sol = buildVerticesSphere(sol,NULL, 0, NULL);
     
    glGenTextures(2, texture);
