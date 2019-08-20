@@ -4,41 +4,31 @@
 #include <iostream>
 #include <string>
 #include "Geometry.h"
+#include <string.h>
 #include "Bmp.h"
 #include "CImg.h"
 #include <vector>
+#define WINDOW_TITLE_PREFIX "Eu, avião"
 using namespace std;
 using namespace cimg_library;
-typedef struct Rotacao
-{
-  float angle;
-  char axis;
-} Rotacao;
-vector<float> lasers;
-vector<float> lasers_color;
-vector<Rotacao> rotacoes;
+unsigned FrameCount = 0;
+
 Sphere planeta, sol;
-GLuint texPlanetaId, texSolId;
 GLuint texture[2];
-float sol_raio, solX,solY, solZ, raio, angulo, h,dh, h_max, h_min, v;
-float laser_size;
+int aterrissando;
+float sol_raio, solX,solY, solZ, raio, angulo, h,dh, h_max, h_min, h_atual, h_ant, v, h_max_atual;
 Vetor camera, up, ref, polar, dhs, eixo_frente, eixo_x, eixo_y, eixo_z, origin;
 void  draw_tex_sphere(Sphere sphere, GLuint tex);
 const float PI = 3.1415926f;
 GLfloat luz_pontual[] = { 0.0, 1.0, 50.0, 1.0 };
+Vetor camera_exib, ref_exib;
 
-Rotacao create_rotate(float angle, char axis){
-   Rotacao rot;
-   rot.angle = angle;
-   rot.axis = axis;
-   return rot;
-}
 float getPixel( const char* fileName, int i, int j){
     Image::Bmp bmp;
     if(!bmp.read(fileName)){
         return 0;     // exit if failed load image
     }
-    return float(bmp.getData()[i*bmp.getWidth() + j] - 128)/128;
+    return float(bmp.getData()[i*bmp.getWidth() + j])/255;
 
 }
 
@@ -213,62 +203,7 @@ void desenhar_objeto(){
    
 }
 
-Vetor rotate_in_arbitrary_axis2(Vetor xyz, Vetor p1, Vetor p2, float angle){
-   //Vetor abc = p2;
-   double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32,m33,m34;
-   Vetor abc =sub_vec(p2, p1);
-   Vetor uvw = norm(abc);
-   double x = xyz.x;
-   double y = xyz.y;
-   double z = xyz.z;
-   double a = abc.x;
-   double b = abc.y;
-   double c = abc.z;
-   double u = uvw.x;
-   double v = uvw.y;
-   double w = uvw.z;
-   double u2 = u*u;
-   double v2 = v*v;
-   double w2 = w*w;
-   double cosT = cos(angle);
-   double oneMinusCosT = 1-cosT;
-   double sinT = sin(angle);
-   // Build the matrix entries element by element.
-   m11 = u2 + (v2 + w2) * cosT;
-   m12 = u*v * oneMinusCosT - w*sinT;
-   m13 = u*w * oneMinusCosT + v*sinT;
-   m14 = (a*(v2 + w2) - u*(b*v + c*w))*oneMinusCosT
-            + (b*w - c*v)*sinT;
 
-   m21 = u*v * oneMinusCosT + w*sinT;
-   m22 = v2 + (u2 + w2) * cosT;
-   m23 = v*w * oneMinusCosT - u*sinT;
-   m24 = (b*(u2 + w2) - v*(a*u + c*w))*oneMinusCosT
-            + (c*u - a*w)*sinT;
-
-   m31 = u*w * oneMinusCosT - v*sinT;
-   m32 = v*w * oneMinusCosT + u*sinT;
-   m33 = w2 + (u2 + v2) * cosT;
-   m34 = (c*(u2 + v2) - w*(a*u + b*v))*oneMinusCosT
-            + (a*v - b*u)*sinT;
-   Vetor res;
-   res.x = m11*x + m12*y + m13*z + m14;
-   res.y = m21*x + m22*y + m23*z + m24;
-   res.z = m31*x + m32*y + m33*z + m34;
-   
-   //cout << "abc:" << endl;
-   //print_vetor(abc);
-   /**
-   cout << "uvw:" << endl;
-   print_vetor(uvw);
-   cout << "xyz:" << endl;
-   print_vetor(xyz);
-   cout << "res:" << endl;
-   print_vetor(res);
-   cout << endl;
-   **/
-   return res;
-}
 void desenhar_eixos(){
    //glEnable(GL_LIGHTING);
     //não há efeitos de iluminação nos eixos
@@ -306,13 +241,7 @@ void desenhar_pontos(){
         glVertex3f(eixo_frente.x, eixo_frente.y, eixo_frente.z); 
     glEnd(); //glDisable(GL_LIGHTING);
 	}  
-void rotate(Rotacao rotacao){
-   float angulo = rotacao.angle;
-   camera = rotate_vec(camera, rotacao.angle, rotacao.axis);
-   ref = rotate_vec(ref, rotacao.angle, rotacao.axis);
-   up = rotate_vec(up, rotacao.angle, rotacao.axis);
-   
-}
+
 void init_camera(){
    ref = new_vetor(0.0, 0.0, -5.0);
    up = new_vetor(0.0, raio + h_min + 1 , 0.0);
@@ -321,26 +250,28 @@ void init_camera(){
 }
 void init(void) 
 {
-  /** 
+  
    cout << "Please enter the radius of the planet(ex: 5.0): ";
    cin >> raio; //ex: 5,0
    cout << "Please enter the sun's position(ex: 0 1 -225): ";
    cin >> solX >> solY >> solZ; //ex: 0 1 -225
-  **/
+   /** 
    raio = 5.0;
    solX = 0;
    solY = 1;
    solZ = -225;
-    
-   sol_raio = 50;
-   planeta = init(planeta, raio, 120, 120);
-   sol = init(sol, sol_raio, 60, 60);
+     **/
+   sol_raio = 40;
+   planeta = init(planeta, raio, 60, 60);
+   sol = init(sol, sol_raio, 30, 30);
    luz_pontual[0] = solX;
    luz_pontual[1] = solY;
    luz_pontual[2] = solZ;
    luz_pontual[3] = 1.0;
    h = 1.0;
    h_max = 1.5;
+   h_max_atual = h_max;
+   h_ant = h_max;
    h_min = 1.0;
    dh = 0.0;
    v = 0.0;
@@ -359,42 +290,50 @@ void init(void)
    glGenTextures(2, texture);
    glActiveTexture(GL_TEXTURE0);
    texture[0] = loadTexture("textures/mars.bmp", true, texture[0]);
-   glActiveTexture(GL_TEXTURE1);
-   texture[1] = loadTexture("textures/sol.bmp", true,texture[1]);
   
 
 }
 
-void atualiza_spin(float* spin, float inc){
-   *spin += inc;
-   if (*spin > 360.0)
-      *spin = *spin - 360.0;
-}
+
 void spinDisplay(void)
-{  
-   if( h == h_max){
-      camera = rotate_in_arbitrary_axis2(camera, origin, eixo_x, -v);
-      ref = rotate_in_arbitrary_axis2(ref, origin, eixo_x,-v);
-      up = rotate_in_arbitrary_axis2(up, origin, eixo_x, -v);
-      eixo_z = rotate_in_arbitrary_axis2(eixo_z, origin,  eixo_x, -v);
-      eixo_y = rotate_in_arbitrary_axis2(eixo_y, origin,  eixo_x, -v);
+{ 
+
+   if(h != h_min){
+      camera = rotate_in_arbitrary_axis(camera, origin, eixo_x, -v);
+      ref = rotate_in_arbitrary_axis(ref, origin, eixo_x,-v);
+      up = rotate_in_arbitrary_axis(up, origin, eixo_x, -v);
+      eixo_z = rotate_in_arbitrary_axis(eixo_z, origin,  eixo_x, -v);
+      eixo_y = rotate_in_arbitrary_axis(eixo_y, origin,  eixo_x, -v);
+      polar = getPolarCoordinates(planeta, ref, 0);
+      
+      h_atual = get_height(planeta, polar)*0.1;
+      
+      if(v > 0 && h_atual != h_ant){
+         h_max_atual = h_max + h_atual;
+         h_ant = h_atual;
+         if(h_atual > 0)
+            dh = 0.008;
+         else if(h_atual < 0)
+            dh = -0.00;
+         
+      }
    }
    glutPostRedisplay();
 }
 void specialKeys(int key, int x, int y){  
    float temp;
    float angulo =0.08;
-   if(h  == h_max){
+   if(h  == h_max_atual){
       switch (key) {
          case GLUT_KEY_LEFT :
-               ref = rotate_in_arbitrary_axis2(ref, origin, eixo_y, angulo);
-               eixo_x = rotate_in_arbitrary_axis2(eixo_x, origin,  eixo_y, angulo);
-               eixo_z = rotate_in_arbitrary_axis2(eixo_z, origin,  eixo_y, angulo);
+               ref = rotate_in_arbitrary_axis(ref, origin, eixo_y, angulo);
+               eixo_x = rotate_in_arbitrary_axis(eixo_x, origin,  eixo_y, angulo);
+               eixo_z = rotate_in_arbitrary_axis(eixo_z, origin,  eixo_y, angulo);
                break;
          case GLUT_KEY_RIGHT : 
-               ref = rotate_in_arbitrary_axis2(ref, origin, eixo_y, -angulo);
-               eixo_x = rotate_in_arbitrary_axis2(eixo_x, origin,  eixo_y, -angulo);
-               eixo_z = rotate_in_arbitrary_axis2(eixo_z, origin,  eixo_y, -angulo);
+               ref = rotate_in_arbitrary_axis(ref, origin, eixo_y, -angulo);
+               eixo_x = rotate_in_arbitrary_axis(eixo_x, origin,  eixo_y, -angulo);
+               eixo_z = rotate_in_arbitrary_axis(eixo_z, origin,  eixo_y, -angulo);
                break;     
          case GLUT_KEY_UP : 
                v += 0.001;
@@ -415,42 +354,38 @@ void specialKeys(int key, int x, int y){
 
 void display(void)
 {
-   //limpeza do zbuffer deve ser feita a cada desenho da tela
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   polar = getPolarCoordinates(planeta, camera, h);
+   gluLookAt (camera.x, camera.y, camera.z, ref.x, ref.y, ref.z, up.x, up.y, up.z);
    
-   dhs = get_height(planeta, polar);
-   Vetor camera_exib = inc_vec(camera, dhs, 1.0);
-   polar = getPolarCoordinates(planeta, ref, h);
-   dhs = get_height(planeta, polar);
-   Vetor ref_exib = inc_vec(ref, dhs, 1.0);
-   gluLookAt (camera_exib.x, camera_exib.y, camera_exib.z, ref_exib.x, ref_exib.y, ref_exib.z, up.x, up.y, up.z);	
-   //gluLookAt (0.0, raio+h, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);	
    glLightfv(GL_LIGHT1, GL_POSITION, luz_pontual);
    desenhar_luz(); 
-   //desenhar_eixos();
    desenhar_objeto();
-   //desenhar_pontos();
+   	
    glutSwapBuffers();
 }
 void update_h(int time){
    if(dh != 0){
       h += dh;
-      if(h > h_max){
-         h = h_max;
-         dh = 0;
-      }
-      if(h < h_min){
-         h = h_min;
-         dh = 0;
-         
+      if(dh < 0 && !aterrissando){
+         if(h < h_max_atual){
+            h = h_max_atual;
+            dh = 0;
+         }
+         time = 3;
+      }else if(dh < 0 && aterrissando){
+            if(h < h_min){
+               h = h_min;
+               dh = 0;
+            }
+      }else  if(dh > 0){
+          if(h >h_max_atual ){
+            h =h_max_atual;
+            dh = 0;
+            }
       }
    }
-   if(h == h_min)
-      v = 0;
    if(dh != 0){
       camera = inc_vec(camera, eixo_y, dh);
       ref = inc_vec(ref, eixo_y, dh);
@@ -461,18 +396,22 @@ void update_h(int time){
 }
 
 void keyboard(unsigned char key, int x, int y){
-   if(dh == 0){
+   
       switch (key)
       {
       case 'd':
          if(h == h_min){
             dh = 0.01;
+            aterrissando = 0;
             glutIdleFunc(spinDisplay);
+            
          }
         break;
       case 's':
-         if(h == h_max){
+         if(h == h_max_atual){
             dh = -0.01;
+            v = 0;
+            aterrissando = 1;
             glutIdleFunc(NULL);
          }
          break;
@@ -480,7 +419,7 @@ void keyboard(unsigned char key, int x, int y){
       default:
          break;
       }
-   }
+   
   
 }
 
@@ -489,16 +428,6 @@ void reshape (int w, int h)
    glViewport (0, 0, (GLsizei) w, (GLsizei) h);
    glMatrixMode (GL_PROJECTION);
    glLoadIdentity();
-   //ortográfica
-   /**
-   if (w <= h)
-      glOrtho (-1.5, 1.5, -1.5*(GLfloat)h/(GLfloat)w,
-         1.5*(GLfloat)h/(GLfloat)w, -10.0, 10.0);
-   else
-      glOrtho (-1.5*(GLfloat)w/(GLfloat)h,
-         1.5*(GLfloat)w/(GLfloat)h, -1.5, 1.5, -10.0, 10.0);
-   */
-   //perspectiva
    gluPerspective(90.0, w/h, 0.3, 1000.0);
    glutPostRedisplay();
 }
@@ -507,7 +436,7 @@ int main(int argc, char** argv)
 {
    glutInit(&argc, argv);
    glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
-   glutInitWindowSize (500, 500); 
+   glutInitWindowSize (800, 600); 
    glutInitWindowPosition (500, 100);
    glutCreateWindow (argv[0]);
    init ();

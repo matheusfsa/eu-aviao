@@ -13,7 +13,7 @@ float getHeight(CImg<unsigned char> src, float s, float t){
     int height = src.height();
     int x = round(s*width);
     int y = round(t*height);   
-    float height_res = (float)src(x,y,0,0)/255;
+    float height_res = ((float)src(x,y,0,0)/128) - 1;
     return height_res;
 
 }
@@ -85,7 +85,7 @@ Vetor rotate_vec(Vetor v, float angle, char axis){
 float getPixel(const unsigned char* data, int width, int height, float s, float t, int channel){
     int j = round(s*width);
     int i = round(t*height);
-    return float(data[(i * width + j)+ channel]- 128) /128;
+    return float(data[(i * width + j)+ channel] )/255;
 }
 Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, const char* hmfileNameTxt)
 {
@@ -111,7 +111,7 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
     }
     int sectorCount = sphere.sectors;
     int stackCount = sphere.stacks;
-    std::vector<Vetor>().swap(sphere.heights);
+    std::vector<float>().swap(sphere.heights);
     std::vector<float>().swap(sphere.vertices);
     std::vector<float>().swap(sphere.normals);
     std::vector<float>().swap(sphere.texCoords);
@@ -136,9 +136,6 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
         
         // add (sectorCount+1) vertices per stack
         // the first and last vertices have same position and normal, but different tex coords
-         
-        
-        float height_0n =  (rand() % 500)/(float)1000; 
         
         
         for(int j = 0; j <= sectorCount; ++j)
@@ -149,8 +146,13 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
             x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
             //y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
             z= xy * sinf(sectorAngle);
-          
-                                   
+            Vetor v2 = getPolarCoordinates(sphere, new_vetor(x, y, z), 0); 
+            if( int(v2.x) - i != 0){
+                cout << "Coordenadas reais: " << "(" << i << ", "<< j << ", "<< stackAngle << ", " << sectorAngle << ")" << endl;
+                cout << "Coordenadas estimadas: ";
+                print_vetor(v2);                
+            }
+            
             // normalized vertex normal
             nx = x * lengthInv;
             ny = y * lengthInv; 
@@ -171,13 +173,14 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
             }else{
                 height = 0;   
             } 
-            height *= 0.08;
+            sphere.heights.push_back(height);
+            height *= 0.5;
             Vetor v;        
             v.x = nx*height;
             v.y = ny*height;
             v.z = nz*height;
             
-            sphere.heights.push_back(v);
+            
             sphere.vertices.push_back(x+v.x);
             sphere.vertices.push_back(y+v.y);
             sphere.vertices.push_back(z+v.y);
@@ -240,7 +243,7 @@ Sphere buildVerticesSphere(Sphere sphere, const char* hmfileName, int is_img, co
     }
     return sphere;
 }
-Vetor get_height(Sphere sphere, Vetor polar){
+float get_height(Sphere sphere, Vetor polar){
     int stack = round(polar.x);
     int sector = round(polar.y);
     return sphere.heights[stack*sector]; 
@@ -281,8 +284,9 @@ Vetor getPolarCoordinates(Sphere sphere, Vetor vetor, float h){
     }
     float stack   = (PI / 2 - stackAngle)/sphere.stackStep;
     float sector = sectorAngle / sphere.sectorStep; 
+    
     //cout << "Coordenadas estimadas:" << 
-                   // " ( "<< vetor.x << ", "<< vetor.y << ", "<< vetor.z << ", "<< stackAngle << ", "<< stack << ", "<< sectorAngle << ", "<< sector <<  ")" << endl << endl;
+      //              " ( "<< stack << ", "<< sector << ", "<< stackAngle << ", "<< sectorAngle <<  ")" << endl << endl;
     
     return new_vetor(round(stack), round(sector), 0.0);
 }
@@ -308,15 +312,47 @@ Vetor norm(Vetor a){
     return new_vetor(a.x/norma, a.y/norma,a.z/norma);
 }
 Vetor rotate_in_arbitrary_axis(Vetor xyz, Vetor p1, Vetor p2, float angle){
-   Vetor abc =sub_vec(p1, p2);
+   //Vetor abc = p2;
+   double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32,m33,m34;
+   Vetor abc =sub_vec(p2, p1);
    Vetor uvw = norm(abc);
-   print_vetor(uvw);
-   print_vetor(xyz);
+   double x = xyz.x;
+   double y = xyz.y;
+   double z = xyz.z;
+   double a = abc.x;
+   double b = abc.y;
+   double c = abc.z;
+   double u = uvw.x;
+   double v = uvw.y;
+   double w = uvw.z;
+   double u2 = u*u;
+   double v2 = v*v;
+   double w2 = w*w;
+   double cosT = cos(angle);
+   double oneMinusCosT = 1-cosT;
+   double sinT = sin(angle);
+   // Build the matrix entries element by element.
+   m11 = u2 + (v2 + w2) * cosT;
+   m12 = u*v * oneMinusCosT - w*sinT;
+   m13 = u*w * oneMinusCosT + v*sinT;
+   m14 = (a*(v2 + w2) - u*(b*v + c*w))*oneMinusCosT
+            + (b*w - c*v)*sinT;
+
+   m21 = u*v * oneMinusCosT + w*sinT;
+   m22 = v2 + (u2 + w2) * cosT;
+   m23 = v*w * oneMinusCosT - u*sinT;
+   m24 = (b*(u2 + w2) - v*(a*u + c*w))*oneMinusCosT
+            + (c*u - a*w)*sinT;
+
+   m31 = u*w * oneMinusCosT - v*sinT;
+   m32 = v*w * oneMinusCosT + u*sinT;
+   m33 = w2 + (u2 + v2) * cosT;
+   m34 = (c*(u2 + v2) - w*(a*u + b*v))*oneMinusCosT
+            + (a*v - b*u)*sinT;
    Vetor res;
-   res.x = (abc.x*(uvw.y*uvw.y + uvw.z*uvw.z) - uvw.x*(abc.y*uvw.y + abc.z*uvw.z - uvw.x*xyz.x - uvw.y*xyz.y - uvw.z*xyz.z))*(1-cos(angle)) + xyz.x*cos(angle) + (-abc.z*uvw.y + abc.y*uvw.z - uvw.z*xyz.y + uvw.y*xyz.z)*sin(angle);
-   res.y = (abc.y*(uvw.x*uvw.x + uvw.z*uvw.z) - uvw.y*(abc.x*uvw.x + abc.z*uvw.z - uvw.x*xyz.x - uvw.y*xyz.y - uvw.z*xyz.z))*(1-cos(angle)) + xyz.y*cos(angle) + (abc.z*uvw.x + abc.x*uvw.z - uvw.z*xyz.x + uvw.x*xyz.z)*sin(angle);
-   res.x = (abc.z*(uvw.x*uvw.x + uvw.y*uvw.y) - uvw.z*(abc.x*uvw.x + abc.y*uvw.y - uvw.x*xyz.x - uvw.y*xyz.y - uvw.z*xyz.z))*(1-cos(angle)) + xyz.z*cos(angle) + (-abc.y*uvw.x + abc.x*uvw.y - uvw.y*xyz.x + uvw.x*xyz.y)*sin(angle);
-   print_vetor(res);
+   res.x = m11*x + m12*y + m13*z + m14;
+   res.y = m21*x + m22*y + m23*z + m24;
+   res.z = m31*x + m32*y + m33*z + m34;
    return res;
 }
  

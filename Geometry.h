@@ -16,7 +16,7 @@ typedef struct Sphere
   float stackStep;
   vector<float> vertices;
   vector<float> normals;
-  vector<Vetor> heights;
+  vector<float> heights;
   vector<float> texCoords;
   vector<unsigned int> indices;
   vector<unsigned int> lineIndices;
@@ -28,7 +28,7 @@ Vetor getPolarCoordinates(Sphere sphere, Vetor vetor, float h);
 Vetor new_vetor(float x, float y, float z);
 void print_vetor(Vetor a);
 Vetor rotate_vec(Vetor v, float angle, char axis);
-Vetor get_height(Sphere sphere, Vetor polar);
+float get_height(Sphere sphere, Vetor polar);
 float get_norm(Vetor vetor);
 Vetor sub_vec(Vetor a, Vetor b);
 Vetor sum_vec(Vetor a, Vetor b);
