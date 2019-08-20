@@ -312,9 +312,9 @@ void spinDisplay(void)
          h_max_atual = h_max + h_atual;
          h_ant = h_atual;
          if(h_atual > 0)
-            dh = 0.008;
+            dh = 0.01;
          else if(h_atual < 0)
-            dh = -0.00;
+            dh = -0.01;
          
       }
    }
